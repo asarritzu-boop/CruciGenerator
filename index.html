@@ -292,19 +292,30 @@
         if(c.mV) p.push({ n: c.n, d: 'V', x: x, y: y, w: c.mV.w, c: c.mV.c });
     }));
 
-    // Creiamo la stringa JSON standard
-    let jsonString = JSON.stringify([{ id: Date.now(), parole: p }], null, 4);
-    
-    // Rimuoviamo le doppie virgolette dalle chiavi (es. "n": -> n:)
-    // La regex cerca una parola tra virgolette seguita dai due punti
-    let cleanString = jsonString.replace(/"(\w+)":/g, '$1:');
+    // Costruiamo la stringa riga per riga per avere il controllo totale sulla formattazione
+    let righeParole = p.map(item => {
+        // Puliamo la definizione da eventuali apici singoli interni per evitare errori JS
+        let defPulita = item.c.replace(/'/g, "\\'");
+        return `            { n: ${item.n}, d: '${item.d}', x: ${item.x}, y: ${item.y}, w: '${item.w}', c: '${defPulita}' }`;
+    }).join(',\n');
 
-    const blob = new Blob([`const SCHEMI_BIBLICI = ${cleanString};`], { type: 'text/javascript' });
+    // Componiamo il file finale (id impostato a 1 come da istruzioni precedenti)
+    const contenutoFile = `const SCHEMI_BIBLICI = [
+    {
+        id: 1,
+        parole: [
+\n${righeParole}
+        ]
+    }
+];`;
+
+    const blob = new Blob([contenutoFile], { type: 'text/javascript' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'schemi.js';
     a.click();
 }
+
 
     function resetAll() { if(confirm("Cancellare tutto lo schema?")) { data.forEach(r => r.forEach(c => { c.l=''; c.b=false; c.n=0; c.mH=null; c.mV=null; })); render(); } }
 </script>
