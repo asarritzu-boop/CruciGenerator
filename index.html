@@ -286,17 +286,25 @@
     }
 
     function exportJS() {
-        const p = [];
-        data.forEach((row, y) => row.forEach((c, x) => {
-            if(c.mH) p.push({ n: c.n, d: 'H', x: x, y: y, w: c.mH.w, c: c.mH.c });
-            if(c.mV) p.push({ n: c.n, d: 'V', x: x, y: y, w: c.mV.w, c: c.mV.c });
-        }));
-        const blob = new Blob([`const SCHEMI_BIBLICI = ${JSON.stringify([{ id: Date.now(), parole: p }], null, 4)};`], { type: 'text/javascript' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'schemi.js';
-        a.click();
-    }
+    const p = [];
+    data.forEach((row, y) => row.forEach((c, x) => {
+        if(c.mH) p.push({ n: c.n, d: 'H', x: x, y: y, w: c.mH.w, c: c.mH.c });
+        if(c.mV) p.push({ n: c.n, d: 'V', x: x, y: y, w: c.mV.w, c: c.mV.c });
+    }));
+
+    // Creiamo la stringa JSON standard
+    let jsonString = JSON.stringify([{ id: Date.now(), parole: p }], null, 4);
+    
+    // Rimuoviamo le doppie virgolette dalle chiavi (es. "n": -> n:)
+    // La regex cerca una parola tra virgolette seguita dai due punti
+    let cleanString = jsonString.replace(/"(\w+)":/g, '$1:');
+
+    const blob = new Blob([`const SCHEMI_BIBLICI = ${cleanString};`], { type: 'text/javascript' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'schemi.js';
+    a.click();
+}
 
     function resetAll() { if(confirm("Cancellare tutto lo schema?")) { data.forEach(r => r.forEach(c => { c.l=''; c.b=false; c.n=0; c.mH=null; c.mV=null; })); render(); } }
 </script>
