@@ -226,49 +226,81 @@
     }
 
     function findWords(dir) {
-        let pat = "", len = 0;
-        for (let i = 0; (dir === 'H' ? cur.x + i : cur.y + i) < S; i++) {
-            let cell = dir === 'H' ? data[cur.y][cur.x + i] : data[cur.y + i][cur.x];
-            if (cell.b) break;
-            pat += cell.l || ".";
-            len++;
-        }
-        const regex = new RegExp(`^${pat}$`, "i");
-        const list = document.getElementById('sList');
-        list.innerHTML = '';
-
-        if (!window.glossarioData) {
-            list.innerHTML = '<div class="no-match">⚠️ Glossario non trovato</div>';
-            return;
-        }
-
-        const matches = window.glossarioData.voci.filter(v => {
-            let p = v.parola.toUpperCase();
-            return p.length === len && !["IL","LO","LA","LE","GLI","UN","UNO","UNA"].includes(p) && regex.test(p);
-        });
-
-        if (matches.length === 0) {
-            list.innerHTML = '<div class="no-match">Nessuna corrispondenza trovata</div>';
-            return;
-        }
-
-        matches.forEach(m => {
-            const btn = document.createElement('button');
-            btn.className = 's-item';
-            let word = (m.parola.toUpperCase() === "LIA") ? "LEA" : m.parola.toUpperCase();
-            btn.innerHTML = `<strong>${word}</strong><small>${m.def}</small>`;
-            btn.onclick = () => {
-                for (let i = 0; i < word.length; i++) {
-                    let cx = dir === 'H' ? cur.x + i : cur.x, cy = dir === 'H' ? cur.y : cur.y + i;
-                    data[cy][cx].l = word[i];
-                    data[cy][cx].b = false;
-                }
-                data[cur.y][cur.x][dir==='H'?'mH':'mV'] = { d: dir, x: cur.x, y: cur.y, w: word, c: `${m.def} (${m.rif})` };
-                render(); closeM();
-            };
-            list.appendChild(btn);
-        });
+    let pat = "", len = 0;
+    // Calcola lo spazio massimo disponibile fino al bordo o a una nera
+    for (let i = 0; (dir === 'H' ? cur.x + i : cur.y + i) < S; i++) {
+        let cell = dir === 'H' ? data[cur.y][cur.x + i] : data[cur.y + i][cur.x];
+        if (cell.b) break;
+        pat += cell.l || ".";
+        len++;
     }
+
+    const list = document.getElementById('sList');
+    list.innerHTML = '';
+
+    if (!window.glossarioData) {
+        list.innerHTML = '<div class="no-match">⚠️ Glossario non trovato</div>';
+        return;
+    }
+
+    // NUOVA LOGICA: Filtriamo per lunghezza variabile (minimo 2 lettere)
+    const matches = window.glossarioData.voci.filter(v => {
+        let p = v.parola.toUpperCase();
+        let parolaLen = p.length;
+
+        // Regole: 
+        // 1. Lunghezza tra 2 e lo spazio massimo disponibile (len)
+        // 2. Non deve essere un articolo
+        // 3. Deve corrispondere al pattern delle lettere già presenti (sottostringa del pattern)
+        if (parolaLen >= 2 && parolaLen <= len && !["IL","LO","LA","LE","GLI","UN","UNO","UNA"].includes(p)) {
+            // Prendiamo la parte del pattern corrispondente alla lunghezza della parola attuale
+            let subPattern = pat.substring(0, parolaLen);
+            const regex = new RegExp(`^${subPattern}$`, "i");
+            return regex.test(p);
+        }
+        return false;
+    });
+
+    if (matches.length === 0) {
+        list.innerHTML = '<div class="no-match">Nessuna corrispondenza trovata</div>';
+        return;
+    }
+
+    // Ordiniamo i suggerimenti dal più lungo al più corto
+    matches.sort((a, b) => b.parola.length - a.parola.length);
+
+    matches.forEach(m => {
+        const btn = document.createElement('button');
+        btn.className = 's-item';
+        let word = (m.parola.toUpperCase() === "LIA") ? "LEA" : m.parola.toUpperCase();
+        
+        btn.innerHTML = `<strong>${word}</strong> <span style="color:var(--ios-gray); font-size:11px;">(${word.length})</span><small>${m.def}</small>`;
+        
+        btn.onclick = () => {
+            // 1. Se la parola scelta è più corta dello spazio, aggiungiamo una nera alla fine
+            if (word.length < len) {
+                let nx = dir === 'H' ? cur.x + word.length : cur.x;
+                let ny = dir === 'H' ? cur.y : cur.y + word.length;
+                if (nx < S && ny < S) {
+                    data[ny][nx].b = true;
+                    clearCellData(nx, ny);
+                }
+            }
+
+            // 2. Inseriamo le lettere
+            for (let i = 0; i < word.length; i++) {
+                let cx = dir === 'H' ? cur.x + i : cur.x, cy = dir === 'H' ? cur.y : cur.y + i;
+                data[cy][cx].l = word[i];
+                data[cy][cx].b = false;
+            }
+
+            data[cur.y][cur.x][dir==='H'?'mH':'mV'] = { d: dir, x: cur.x, y: cur.y, w: word, c: `${m.def} (${m.rif})` };
+            render(); closeM();
+        };
+        list.appendChild(btn);
+    });
+}
+
 
     async function shareApp() {
         const shareData = {
