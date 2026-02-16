@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CRUCIVERBA GENERATOR</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007AFF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icona.png">
+
+    <meta property="og:title" content="Cruciverba Generator Biblico">
+    <meta property="og:description" content="Crea i tuoi schemi biblici personalizzati. Funziona anche offline.">
+    <meta property="og:image" content="icona.png">
+    <meta property="og:type" content="website">
+
+    <script src="glossario.js"></script>
+    
+    <style>
+        :root {
+            --ios-blue: #007AFF;
+            --ios-red: #FF3B30;
+            --ios-green: #34C759;
+            --ios-gray: #8E8E93;
+            --ios-dark-bg: #1C1C1E;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            height: 100vh; width: 100vw; 
+            display: flex; flex-direction: column; 
+            background: #000; overflow: hidden;
+            color: white;
+        }
+
+        header {
+            height: 30px; background: #1C1C1E;
+            display: flex; align-items: center; justify-content: center;
+            border-bottom: 0.5px solid #333; flex-shrink: 0;
+        }
+        header h1 { font-size: 11px; font-weight: 600; color: var(--ios-gray); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        #main-container {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: #000; padding: 10px;
+        }
+
+        /* Griglia adattiva */
+        #grid { 
+            display: grid; 
+            grid-template-columns: repeat(11, 1fr); 
+            grid-template-rows: repeat(11, 1fr); 
+            gap: 1px; background: #3A3A3C; 
+            border: 2px solid #3A3A3C;
+            border-radius: 6px; overflow: hidden;
+            width: min(95vw, calc(100vh - 140px)); 
+            height: min(95vw, calc(100vh - 140px));
+        }
+
+        .cell { 
+            background: #FFF; display: flex; align-items: center; justify-content: center; 
+            font-weight: 700; font-size: min(5vw, 3.5vh); cursor: pointer; 
+            position: relative; text-transform: uppercase; color: #000;
+        }
+        .cell.black { background: var(--ios-dark-bg); }
+        .cell .num { 
+            position: absolute; top: 2px; left: 2px; 
+            font-size: min(1.8vw, 1.1vh); color: var(--ios-gray); font-weight: 600; 
+        }
+
+        /* Footer con pulsanti iOS */
+        .footer-controls { 
+            display: flex; gap: 8px; padding: 15px 0;
+            width: min(95vw, calc(100vh - 140px));
+        }
+        .btn { 
+            flex: 1; height: 44px; border: none; border-radius: 12px;
+            color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        .btn:active { opacity: 0.7; transform: scale(0.97); }
+        .btn-reset { background: var(--ios-red); }
+        .btn-export { background: var(--ios-blue); }
+        .btn-share { background: var(--ios-green); }
+
+        /* Setup Orizzontale (Landscape) */
+        @media (orientation: landscape) {
+            #main-container { flex-direction: row; gap: 15px; }
+            #grid { width: calc(100vh - 60px); height: calc(100vh - 60px); }
+            .footer-controls { flex-direction: column; width: 130px; height: calc(100vh - 60px); justify-content: center; }
+            .btn { flex: 0 0 44px; width: 100%; }
+        }
+
+        /* Modale iOS */
+        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; }
+        #modal { 
+            display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
+            background: #FFF; padding: 20px; border-radius: 20px; z-index: 101; 
+            width: 92%; max-width: 420px; color: #000;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8);
+        }
+
+        .mode-btn { flex: 1; padding: 14px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
+        .btn-black { background: #3A3A3C; color: white; }
+        .btn-dir { background: var(--ios-blue); color: white; }
+
+        .no-match { text-align: center; padding: 30px 10px; color: var(--ios-gray); font-weight: 500; }
+
+        .s-item { 
+            padding: 15px; border-bottom: 0.5px solid #E5E5EA; width: 100%; 
+            text-align: left; background: none; border: none; cursor: pointer; 
+        }
+        .s-item strong { color: var(--ios-blue); font-size: 17px; }
+        .s-item small { color: #333; font-size: 12px; display: block; margin-top: 3px; }
+    </style>
+</head>
+<body>
+
+<header><h1>Cruciverba Generator</h1></header>
+
+<div id="main-container">
+    <div id="grid"></div>
+    <div class="footer-controls">
+        <button class="btn btn-reset" onclick="resetAll()">Nuovo</button>
+        <button class="btn btn-export" onclick="exportJS()">Esporta</button>
+        <button class="btn btn-share" onclick="shareApp()">Condividi</button>
+    </div>
+</div>
+
+<div id="overlay" onclick="closeM()"></div>
+<div id="modal">
+    <div style="display:flex; gap:10px; margin-bottom:15px;">
+        <button class="mode-btn btn-black" onclick="setBlack()">NERA</button>
+        <button class="mode-btn btn-dir" onclick="findWords('H')">ORIZ</button>
+        <button class="mode-btn btn-dir" onclick="findWords('V')">VERT</button>
+    </div>
+    <div id="sList" style="max-height: 40vh; overflow-y: auto; -webkit-overflow-scrolling: touch;"></div>
+</div>
+
+<script>
+    const S = 11;
+    let data = Array(S).fill().map(() => Array(S).fill(null).map(() => ({ l: '', b: false, n: 0, mH: null, mV: null })));
+    let cur = { x: 0, y: 0 };
+
+    window.addEventListener('load', () => {
+        render();
+        // Registrazione Service Worker per uso Offline
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
+        }
+    });
+
+    function updateNumbers() {
+        data.forEach(r => r.forEach(c => c.n = 0));
+        let count = 1;
+        for (let y = 0; y < S; y++) {
+            for (let x = 0; x < S; x++) {
+                if (data[y][x].b) continue;
+                let h = (x === 0 || data[y][x-1].b) && (x + 1 < S && !data[y][x+1].b);
+                let v = (y === 0 || data[y-1][x].b) && (y + 1 < S && !data[y+1][x].b);
+                if (h || v) data[y][x].n = count++;
+            }
+        }
+    }
+
+    function render() {
+        updateNumbers();
+        const g = document.getElementById('grid');
+        g.innerHTML = '';
+        data.forEach((row, y) => row.forEach((c, x) => {
+            const d = document.createElement('div');
+            d.className = 'cell' + (c.b ? ' black' : '');
+            if (!c.b) {
+                if (c.n > 0) d.innerHTML += `<span class="num">${c.n}</span>`;
+                d.innerHTML += `<span>${c.l}</span>`;
+            }
+            d.onclick = () => { cur = {x, y}; openM(); };
+            g.appendChild(d);
+        }));
+    }
+
+    function openM() { 
+        document.getElementById('sList').innerHTML = '';
+        document.getElementById('overlay').style.display = 'block'; 
+        document.getElementById('modal').style.display = 'block'; 
+    }
+    
+    function closeM() { 
+        document.getElementById('overlay').style.display = 'none'; 
+        document.getElementById('modal').style.display = 'none'; 
+    }
+
+    function setBlack() {
+        data[cur.y][cur.x].b = !data[cur.y][cur.x].b;
+        data[cur.y][cur.x].l = ''; data[cur.y][cur.x].mH = null; data[cur.y][cur.x].mV = null;
+        render(); closeM();
+    }
+
+    function findWords(dir) {
+        let pat = "", len = 0;
+        for (let i = 0; (dir === 'H' ? cur.x + i : cur.y + i) < S; i++) {
+            let cell = dir === 'H' ? data[cur.y][cur.x + i] : data[cur.y + i][cur.x];
+            if (cell.b) break;
+            pat += cell.l || ".";
+            len++;
+        }
+        const regex = new RegExp(`^${pat}$`, "i");
+        const list = document.getElementById('sList');
+        list.innerHTML = '';
+
+        if (!window.glossarioData) {
+            list.innerHTML = '<div class="no-match">⚠️ Glossario non trovato</div>';
+            return;
+        }
+
+        const matches = window.glossarioData.voci.filter(v => {
+            let p = v.parola.toUpperCase();
+            return p.length === len && !["IL","LO","LA","LE","GLI","UN","UNO","UNA"].includes(p) && regex.test(p);
+        });
+
+        if (matches.length === 0) {
+            list.innerHTML = '<div class="no-match">Nessun termine trovato</div>';
+            return;
+        }
+
+        matches.forEach(m => {
+            const btn = document.createElement('button');
+            btn.className = 's-item';
+            let word = (m.parola.toUpperCase() === "LIA") ? "LEA" : m.parola.toUpperCase();
+            btn.innerHTML = `<strong>${word}</strong><small>${m.def}</small>`;
+            btn.onclick = () => {
+                for (let i = 0; i < word.length; i++) {
+                    let cx = dir === 'H' ? cur.x + i : cur.x, cy = dir === 'H' ? cur.y : cur.y + i;
+                    data[cy][cx].l = word[i];
+                }
+                data[cur.y][cur.x][dir==='H'?'mH':'mV'] = { d: dir, x: cur.x, y: cur.y, w: word, c: `${m.def} (${m.rif})` };
+                render(); closeM();
+            };
+            list.appendChild(btn);
+        });
+    }
+
+    async function shareApp() {
+        const shareData = {
+            title: 'Cruciverba Generator Biblico',
+            text: 'Prova questa app per creare cruciverba biblici!',
+            url: window.location.href
+        };
+        try {
+            if (navigator.share) await navigator.share(shareData);
+            else {
+                navigator.clipboard.writeText(window.location.href);
+                alert("Link copiato negli appunti!");
+            }
+        } catch (err) { console.log(err); }
+    }
+
+    function exportJS() {
+        const p = [];
+        data.forEach((row, y) => row.forEach((c, x) => {
+            if(c.mH) p.push({ n: c.n, d: 'H', x: x, y: y, w: c.mH.w, c: c.mH.c });
+            if(c.mV) p.push({ n: c.n, d: 'V', x: x, y: y, w: c.mV.w, c: c.mV.c });
+        }));
+        const blob = new Blob([`const SCHEMI_BIBLICI = ${JSON.stringify([{ id: Date.now(), parole: p }], null, 4)};`], { type: 'text/javascript' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'schemi.js';
+        a.click();
+    }
+
+    function resetAll() { if(confirm("Resettare lo schema?")) { data.forEach(r => r.forEach(c => { c.l=''; c.b=false; c.n=0; c.mH=null; c.mV=null; })); render(); } }
+</script>
+</body>
+</html>
