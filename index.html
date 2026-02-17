@@ -16,7 +16,6 @@
     <meta property="og:title" content="Cruciverba Generator Biblico">
     <meta property="og:description" content="Crea i tuoi schemi biblici personalizzati. Funziona anche offline.">
     <meta property="og:image" content="https://asarritzu-boop.github.io/CruciGenerator/icona-512.png">
-    <meta property="og:image:secure_url" content="https://asarritzu-boop.github.io/CruciGenerator/icona-512.png">
 
     <script src="glossario.js"></script>
     
@@ -53,7 +52,6 @@
             padding: 10px; gap: 5px;
         }
 
-        /* Griglia adattiva: resta sempre visibile */
         #grid { 
             display: grid; 
             grid-template-columns: repeat(11, 1fr); 
@@ -76,7 +74,6 @@
             font-size: min(1.8vw, 1.1vh); color: var(--ios-gray); font-weight: 600; 
         }
 
-        /* Pulsantiera iOS */
         .footer-controls { 
             display: flex; gap: 8px; padding: 10px 0;
             width: min(95vw, calc(100vh - 150px));
@@ -91,7 +88,6 @@
         .btn-export { background: var(--ios-blue); }
         .btn-share { background: var(--ios-green); }
 
-        /* ORIZZONTALE */
         @media (orientation: landscape) {
             #main-container { flex-direction: row; gap: 20px; }
             #grid { width: calc(100vh - 60px); height: calc(100vh - 60px); }
@@ -99,7 +95,6 @@
             .btn { flex: 0 0 46px; width: 100%; }
         }
 
-        /* Modale iOS (Senza Blur) */
         #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; }
         #modal { 
             display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
@@ -114,11 +109,22 @@
         .btn-dir { background: var(--ios-blue); color: white; }
         .btn-clear { background: var(--ios-light-gray); color: var(--ios-red); grid-column: span 2; }
 
+        /* Nuovo stile per input manuale */
+        #manual-input { 
+            background: #F2F2F7; padding: 12px; border-radius: 12px; margin-bottom: 15px;
+            display: none; flex-direction: column; gap: 8px;
+        }
+        #manual-input input { 
+            padding: 10px; border: 1px solid #CCC; border-radius: 8px; font-size: 14px; 
+        }
+        #mAddBtn { background: var(--ios-green); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 700; }
+
         .s-item { 
             padding: 15px; border-bottom: 0.5px solid var(--ios-light-gray); width: 100%; 
             text-align: left; background: none; border: none; cursor: pointer; 
         }
         .s-item strong { color: var(--ios-blue); font-size: 17px; }
+        .s-item.used strong { color: var(--ios-red); }
         .s-item small { color: #333; font-size: 12px; display: block; margin-top: 3px; }
         .no-match { text-align: center; padding: 30px 10px; color: var(--ios-gray); font-weight: 500; }
     </style>
@@ -138,8 +144,14 @@
 
 <div id="overlay" onclick="closeM()"></div>
 <div id="modal">
-    <div id="modal-actions" class="modal-grid-btns">
-        </div>
+    <div id="modal-actions" class="modal-grid-btns"></div>
+    
+    <div id="manual-input">
+        <input type="text" id="mWord" placeholder="PAROLA" style="text-transform: uppercase;">
+        <input type="text" id="mDef" placeholder="DEFINIZIONE">
+        <button id="mAddBtn">INSERISCI MANUALE</button>
+    </div>
+
     <div id="sList" style="max-height: 40vh; overflow-y: auto; -webkit-overflow-scrolling: touch;"></div>
 </div>
 
@@ -188,6 +200,7 @@
         const cell = data[cur.y][cur.x];
         const actions = document.getElementById('modal-actions');
         document.getElementById('sList').innerHTML = '';
+        document.getElementById('manual-input').style.display = 'none';
         
         actions.innerHTML = `
             <button class="mode-btn btn-black-toggle" onclick="toggleBlack()">
@@ -226,81 +239,86 @@
     }
 
     function findWords(dir) {
-    let pat = "", len = 0;
-    // Calcola lo spazio massimo disponibile fino al bordo o a una nera
-    for (let i = 0; (dir === 'H' ? cur.x + i : cur.y + i) < S; i++) {
-        let cell = dir === 'H' ? data[cur.y][cur.x + i] : data[cur.y + i][cur.x];
-        if (cell.b) break;
-        pat += cell.l || ".";
-        len++;
-    }
-
-    const list = document.getElementById('sList');
-    list.innerHTML = '';
-
-    if (!window.glossarioData) {
-        list.innerHTML = '<div class="no-match">⚠️ Glossario non trovato</div>';
-        return;
-    }
-
-    // NUOVA LOGICA: Filtriamo per lunghezza variabile (minimo 2 lettere)
-    const matches = window.glossarioData.voci.filter(v => {
-        let p = v.parola.toUpperCase();
-        let parolaLen = p.length;
-
-        // Regole: 
-        // 1. Lunghezza tra 2 e lo spazio massimo disponibile (len)
-        // 2. Non deve essere un articolo
-        // 3. Deve corrispondere al pattern delle lettere già presenti (sottostringa del pattern)
-        if (parolaLen >= 2 && parolaLen <= len && !["IL","LO","LA","LE","GLI","UN","UNO","UNA"].includes(p)) {
-            // Prendiamo la parte del pattern corrispondente alla lunghezza della parola attuale
-            let subPattern = pat.substring(0, parolaLen);
-            const regex = new RegExp(`^${subPattern}$`, "i");
-            return regex.test(p);
+        let pat = "", len = 0;
+        for (let i = 0; (dir === 'H' ? cur.x + i : cur.y + i) < S; i++) {
+            let cell = dir === 'H' ? data[cur.y][cur.x + i] : data[cur.y + i][cur.x];
+            if (cell.b) break;
+            pat += cell.l || ".";
+            len++;
         }
-        return false;
-    });
 
-    if (matches.length === 0) {
-        list.innerHTML = '<div class="no-match">Nessuna corrispondenza trovata</div>';
-        return;
+        const list = document.getElementById('sList');
+        const manualDiv = document.getElementById('manual-input');
+        list.innerHTML = '';
+        manualDiv.style.display = 'flex';
+
+        document.getElementById('mAddBtn').onclick = () => {
+            let w = document.getElementById('mWord').value.toUpperCase().trim();
+            let d = document.getElementById('mDef').value.trim();
+            if (w.length >= 2 && w.length <= len && d !== "") {
+                insertWord(w, d, dir, len);
+            } else {
+                alert("Parola non valida (min 2 lettere, max " + len + ") o definizione mancante.");
+            }
+        };
+
+        if (!window.glossarioData) return;
+
+        let usedWords = [];
+        data.forEach(r => r.forEach(c => {
+            if(c.mH) usedWords.push(c.mH.w.toUpperCase());
+            if(c.mV) usedWords.push(c.mV.w.toUpperCase());
+        }));
+
+        const matches = window.glossarioData.voci.filter(v => {
+            let p = v.parola.toUpperCase();
+            if (p.length >= 2 && p.length <= len && !["IL","LO","LA","LE","GLI","UN","UNO","UNA"].includes(p)) {
+                let subPattern = pat.substring(0, p.length);
+                return new RegExp(`^${subPattern}$`, "i").test(p);
+            }
+            return false;
+        }).sort((a, b) => b.parola.length - a.parola.length);
+
+        if (matches.length === 0) {
+            list.innerHTML = '<div class="no-match">Nessuna corrispondenza nel glossario</div>';
+        }
+
+        matches.forEach(m => {
+            const btn = document.createElement('button');
+            let word = (m.parola.toUpperCase() === "LIA") ? "LEA" : m.parola.toUpperCase();
+            let isUsed = usedWords.includes(word);
+            
+            btn.className = 's-item' + (isUsed ? ' used' : '');
+            btn.innerHTML = `<strong>${word}</strong> ${isUsed ? '(GIÀ USATA)' : ''} <small>${m.def} (${m.rif})</small>`;
+            btn.onclick = () => insertWord(word, `${m.def} (${m.rif})`, dir, len);
+            list.appendChild(btn);
+        });
     }
 
-    // Ordiniamo i suggerimenti dal più lungo al più corto
-    matches.sort((a, b) => b.parola.length - a.parola.length);
-
-    matches.forEach(m => {
-        const btn = document.createElement('button');
-        btn.className = 's-item';
-        let word = (m.parola.toUpperCase() === "LIA") ? "LEA" : m.parola.toUpperCase();
-        
-        btn.innerHTML = `<strong>${word}</strong> <span style="color:var(--ios-gray); font-size:11px;">(${word.length})</span><small>${m.def}</small>`;
-        
-        btn.onclick = () => {
-            // 1. Se la parola scelta è più corta dello spazio, aggiungiamo una nera alla fine
-            if (word.length < len) {
-                let nx = dir === 'H' ? cur.x + word.length : cur.x;
-                let ny = dir === 'H' ? cur.y : cur.y + word.length;
-                if (nx < S && ny < S) {
-                    data[ny][nx].b = true;
-                    clearCellData(nx, ny);
-                }
+    function insertWord(word, definition, dir, maxLen) {
+        if (word.length < maxLen) {
+            let nx = dir === 'H' ? cur.x + word.length : cur.x;
+            let ny = dir === 'H' ? cur.y : cur.y + word.length;
+            if (nx < S && ny < S) {
+                data[ny][nx].b = true;
+                clearCellData(nx, ny);
             }
+        }
 
-            // 2. Inseriamo le lettere
-            for (let i = 0; i < word.length; i++) {
-                let cx = dir === 'H' ? cur.x + i : cur.x, cy = dir === 'H' ? cur.y : cur.y + i;
-                data[cy][cx].l = word[i];
-                data[cy][cx].b = false;
-            }
+        for (let i = 0; i < word.length; i++) {
+            let cx = dir === 'H' ? cur.x + i : cur.x, cy = dir === 'H' ? cur.y : cur.y + i;
+            data[cy][cx].l = word[i];
+            data[cy][cx].b = false;
+        }
 
-            data[cur.y][cur.x][dir==='H'?'mH':'mV'] = { d: dir, x: cur.x, y: cur.y, w: word, c: `${m.def} (${m.rif})` };
-            render(); closeM();
+        data[cur.y][cur.x][dir === 'H' ? 'mH' : 'mV'] = { 
+            d: dir, x: cur.x, y: cur.y, w: word, c: definition 
         };
-        list.appendChild(btn);
-    });
-}
-
+        
+        document.getElementById('mWord').value = '';
+        document.getElementById('mDef').value = '';
+        render(); closeM();
+    }
 
     async function shareApp() {
         const shareData = {
@@ -318,21 +336,18 @@
     }
 
     function exportJS() {
-    const p = [];
-    data.forEach((row, y) => row.forEach((c, x) => {
-        if(c.mH) p.push({ n: c.n, d: 'H', x: x, y: y, w: c.mH.w, c: c.mH.c });
-        if(c.mV) p.push({ n: c.n, d: 'V', x: x, y: y, w: c.mV.w, c: c.mV.c });
-    }));
+        const p = [];
+        data.forEach((row, y) => row.forEach((c, x) => {
+            if(c.mH) p.push({ n: c.n, d: 'H', x: x, y: y, w: c.mH.w, c: c.mH.c });
+            if(c.mV) p.push({ n: c.n, d: 'V', x: x, y: y, w: c.mV.w, c: c.mV.c });
+        }));
 
-    // Costruiamo la stringa riga per riga per avere il controllo totale sulla formattazione
-    let righeParole = p.map(item => {
-        // Puliamo la definizione da eventuali apici singoli interni per evitare errori JS
-        let defPulita = item.c.replace(/'/g, "\\'");
-        return `            { n: ${item.n}, d: '${item.d}', x: ${item.x}, y: ${item.y}, w: '${item.w}', c: '${defPulita}' }`;
-    }).join(',\n');
+        let righeParole = p.map(item => {
+            let defPulita = item.c.replace(/'/g, "\\'");
+            return `            { n: ${item.n}, d: '${item.d}', x: ${item.x}, y: ${item.y}, w: '${item.w}', c: '${defPulita}' }`;
+        }).join(',\n');
 
-    // Componiamo il file finale (id impostato a 1 come da istruzioni precedenti)
-    const contenutoFile = `const SCHEMI_BIBLICI = [
+        const contenutoFile = `const SCHEMI_BIBLICI = [
     {
         id: 1,
         parole: [
@@ -341,13 +356,12 @@
     }
 ];`;
 
-    const blob = new Blob([contenutoFile], { type: 'text/javascript' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'schemi.js';
-    a.click();
-}
-
+        const blob = new Blob([contenutoFile], { type: 'text/javascript' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'schemi.js';
+        a.click();
+    }
 
     function resetAll() { if(confirm("Cancellare tutto lo schema?")) { data.forEach(r => r.forEach(c => { c.l=''; c.b=false; c.n=0; c.mH=null; c.mV=null; })); render(); } }
 </script>
