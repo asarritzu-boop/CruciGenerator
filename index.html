@@ -79,7 +79,7 @@
             width: min(95vw, calc(100vh - 150px));
         }
         .btn { 
-            flex: 1; min-width: 60px; height: 46px; border: none; border-radius: 12px;
+            flex: 1; min-width: 30px; height: 46px; border: none; border-radius: 8px;
             color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
             transition: opacity 0.2s, transform 0.1s;
         }
@@ -89,12 +89,58 @@
         .btn-share { background: var(--ios-green); }
         .btn-undo { background: #444; }
 
-        @media (orientation: landscape) {
-            #main-container { flex-direction: row; gap: 20px; }
-            #grid { width: calc(100vh - 60px); height: calc(100vh - 60px); }
-            .footer-controls { flex-direction: column; width: 140px; height: calc(100vh - 60px); justify-content: center; }
-            .btn { flex: 0 0 46px; width: 100%; }
-        }
+     @media (orientation: landscape) {
+    /* 1. Forza il body a non scrollare e a occupare solo lo spazio visibile */
+    body {
+        height: 100dvh;
+        overflow: hidden;
+    }
+
+    header { height: 30px; } /* Riduciamo leggermente l'header */
+
+    #main-container { 
+        flex-direction: row; 
+        gap: 10px; 
+        padding: 5px;
+        padding-left: max(10px, env(safe-area-inset-left));
+        padding-right: max(10px, env(safe-area-inset-right));
+        height: calc(100dvh - 30px); /* Togliamo l'altezza dell'header */
+        align-items: center;
+        justify-content: center;
+    }
+
+    #grid { 
+        /* Usiamo il 75% per lasciare spazio ai bordi e alle barre del browser */
+        width: min(75vw, 75dvh); 
+        height: min(75vw, 75dvh); 
+        margin: 0;
+    }
+
+       .footer-controls { 
+        flex-direction: column; 
+        width: 130px; 
+        /* Altezza massima dinamica per evitare che esca dallo schermo */
+        height: min(75vw, 75dvh); 
+        justify-content: flex-start; 
+        /* Fondamentale: permette di scorrere i pulsanti se l'ultimo sparisce */
+        overflow-y: auto; 
+        gap: 6px;
+        padding-right: 8px; /* Spazio per l'eventuale barra di scorrimento */
+        -webkit-overflow-scrolling: touch; /* Rende lo scroll fluido su iOS */
+    }
+
+    .btn { 
+        flex: 0 0 28px; /* Altezza fissa minima per ogni pulsante */
+        width: 100%; 
+        font-size: 11px; 
+        padding: 0 5px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
 
         #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; }
         #modal { 
