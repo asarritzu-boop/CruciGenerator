@@ -124,9 +124,7 @@
             text-align: left; background: none; border: none; cursor: pointer; 
         }
         .s-item strong { color: var(--ios-blue); font-size: 17px; }
-        .s-item.used strong { color: var(--ios-red); }
         .s-item small { color: #333; font-size: 12px; display: block; margin-top: 3px; }
-        .no-match { text-align: center; padding: 30px 10px; color: var(--ios-gray); font-weight: 500; }
     </style>
 </head>
 <body>
@@ -143,31 +141,26 @@
         <button class="btn btn-export" onclick="exportJS()">Esporta</button>
         <button class="btn" style="background: var(--ios-gray);" onclick="document.getElementById('importFile').click()">Importa</button>
         <button class="btn btn-share" onclick="shareApp()">Condividi</button>
-        <input type="file" id="importFile" accept=".js" style="display:none" onchange="importJS(this)">
+        <input type="file" id="importFile" accept=".js,text/javascript,application/javascript,.txt,*/*" style="display:none" onchange="importJS(this)">
     </div>
 </div>
 
 <div id="overlay" onclick="closeM()"></div>
 <div id="modal">
     <div id="modal-actions" class="modal-grid-btns"></div>
-    
     <div id="manual-input">
         <input type="text" id="mWord" placeholder="PAROLA" style="text-transform: uppercase;">
         <input type="text" id="mDef" placeholder="DEFINIZIONE">
         <button id="mAddBtn">INSERISCI MANUALE</button>
     </div>
-
-    <div id="sList" style="max-height: 40vh; overflow-y: auto; -webkit-overflow-scrolling: touch;"></div>
+    <div id="sList" style="max-height: 40vh; overflow-y: auto;"></div>
 </div>
 
 <script>
     const S = 11;
     let data = Array(S).fill().map(() => Array(S).fill(null).map(() => ({ l: '', b: false, n: 0, mH: null, mV: null })));
     let cur = { x: 0, y: 0 };
-    
-    // Logica Undo/Redo
-    let undoStack = [];
-    let redoStack = [];
+    let undoStack = [], redoStack = [];
 
     function saveState() {
         undoStack.push(JSON.stringify(data));
@@ -190,9 +183,6 @@
 
     window.addEventListener('load', () => {
         render();
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
-        }
     });
 
     function updateNumbers() {
@@ -229,24 +219,17 @@
         const actions = document.getElementById('modal-actions');
         document.getElementById('sList').innerHTML = '';
         document.getElementById('manual-input').style.display = 'none';
-        
         actions.innerHTML = `
-            <button class="mode-btn btn-black-toggle" onclick="toggleBlack()">
-                ${cell.b ? 'RENDI BIANCA' : 'RENDI NERA'}
-            </button>
+            <button class="mode-btn btn-black-toggle" onclick="toggleBlack()">${cell.b ? 'BIANCA' : 'NERA'}</button>
             <button class="mode-btn btn-dir" onclick="findWords('H')">ORIZ</button>
             <button class="mode-btn btn-dir" onclick="findWords('V')">VERT</button>
-            <button class="mode-btn btn-clear" onclick="clearCell()">SVUOTA CASELLA</button>
+            <button class="mode-btn btn-clear" onclick="clearCell()">SVUOTA</button>
         `;
-
         document.getElementById('overlay').style.display = 'block'; 
         document.getElementById('modal').style.display = 'block'; 
     }
     
-    function closeM() { 
-        document.getElementById('overlay').style.display = 'none'; 
-        document.getElementById('modal').style.display = 'none'; 
-    }
+    function closeM() { document.getElementById('overlay').style.display = 'none'; document.getElementById('modal').style.display = 'none'; }
 
     function toggleBlack() {
         saveState();
@@ -262,11 +245,7 @@
         render(); closeM();
     }
 
-    function clearCellData(x, y) {
-        data[y][x].l = '';
-        data[y][x].mH = null;
-        data[y][x].mV = null;
-    }
+    function clearCellData(x, y) { data[y][x].l = ''; data[y][x].mH = null; data[y][x].mV = null; }
 
     function findWords(dir) {
         let pat = "", len = 0;
@@ -276,51 +255,27 @@
             pat += cell.l || ".";
             len++;
         }
-
         const list = document.getElementById('sList');
-        const manualDiv = document.getElementById('manual-input');
-        list.innerHTML = '';
-        manualDiv.style.display = 'flex';
-
+        document.getElementById('manual-input').style.display = 'flex';
         document.getElementById('mAddBtn').onclick = () => {
             let w = document.getElementById('mWord').value.toUpperCase().trim();
             let d = document.getElementById('mDef').value.trim();
-            if (w.length >= 2 && w.length <= len && d !== "") {
-                insertWord(w, d, dir, len);
-            } else {
-                alert("Parola non valida (min 2 lettere, max " + len + ") o definizione mancante.");
-            }
+            if (w.length >= 2 && w.length <= len && d !== "") insertWord(w, d, dir, len);
         };
-
         if (!window.glossarioData) return;
-
-        let usedWords = [];
-        data.forEach(r => r.forEach(c => {
-            if(c.mH) usedWords.push(c.mH.w.toUpperCase());
-            if(c.mV) usedWords.push(c.mV.w.toUpperCase());
-        }));
-
         const matches = window.glossarioData.voci.filter(v => {
             let p = v.parola.toUpperCase();
             if (p.length >= 2 && p.length <= len && !["IL","LO","LA","LE","GLI","UN","UNO","UNA"].includes(p)) {
-                let subPattern = pat.substring(0, p.length);
-                return new RegExp(`^${subPattern}$`, "i").test(p);
+                return new RegExp(`^${pat.substring(0, p.length)}$`, "i").test(p);
             }
             return false;
         }).sort((a, b) => b.parola.length - a.parola.length);
-
-        if (matches.length === 0) {
-            list.innerHTML = '<div class="no-match">Nessuna corrispondenza nel glossario</div>';
-        }
-
         matches.forEach(m => {
             const btn = document.createElement('button');
             let word = (m.parola.toUpperCase() === "LIA") ? "LEA" : m.parola.toUpperCase();
-            let isUsed = usedWords.includes(word);
-            
-            btn.className = 's-item' + (isUsed ? ' used' : '');
-            btn.innerHTML = `<strong>${word}</strong> ${isUsed ? '(GIÀ USATA)' : ''} <small>${m.def} (${m.rif})</small>`;
-            btn.onclick = () => insertWord(word, `${m.def} (${m.rif})`, dir, len);
+            btn.className = 's-item';
+            btn.innerHTML = `<strong>${word}</strong> <small>${m.def}</small>`;
+            btn.onclick = () => insertWord(word, m.def, dir, len);
             list.appendChild(btn);
         });
     }
@@ -328,174 +283,78 @@
     function insertWord(word, definition, dir, maxLen) {
         saveState();
         if (word.length < maxLen) {
-            let nx = dir === 'H' ? cur.x + word.length : cur.x;
-            let ny = dir === 'H' ? cur.y : cur.y + word.length;
-            if (nx < S && ny < S) {
-                data[ny][nx].b = true;
-                clearCellData(nx, ny);
-            }
+            let nx = dir === 'H' ? cur.x + word.length : cur.x, ny = dir === 'H' ? cur.y : cur.y + word.length;
+            if (nx < S && ny < S) { data[ny][nx].b = true; clearCellData(nx, ny); }
         }
-
         for (let i = 0; i < word.length; i++) {
             let cx = dir === 'H' ? cur.x + i : cur.x, cy = dir === 'H' ? cur.y : cur.y + i;
-            data[cy][cx].l = word[i];
-            data[cy][cx].b = false;
+            data[cy][cx].l = word[i]; data[cy][cx].b = false;
         }
-
-        data[cur.y][cur.x][dir === 'H' ? 'mH' : 'mV'] = { 
-            d: dir, x: cur.x, y: cur.y, w: word, c: definition 
-        };
-        
-        document.getElementById('mWord').value = '';
-        document.getElementById('mDef').value = '';
+        data[cur.y][cur.x][dir === 'H' ? 'mH' : 'mV'] = { d: dir, x: cur.x, y: cur.y, w: word, c: definition };
         render(); closeM();
-    }
-
-    async function shareApp() {
-        const shareData = {
-            title: 'Cruciverba Generator Biblico',
-            text: 'Prova questa app per creare cruciverba biblici!',
-            url: 'https://asarritzu-boop.github.io/CruciGenerator/'
-        };
-        try {
-            if (navigator.share) await navigator.share(shareData);
-            else {
-                navigator.clipboard.writeText(shareData.url);
-                alert("Link copiato negli appunti!");
-            }
-        } catch (err) { console.log(err); }
     }
 
     function exportJS() {
         const p = [];
         data.forEach((row, y) => row.forEach((c, x) => {
-            if(c.mH) p.push({ n: c.n, d: 'H', x: x, y: y, w: c.mH.w, c: c.mH.c });
-            if(c.mV) p.push({ n: c.n, d: 'V', x: x, y: y, w: c.mV.w, c: c.mV.c });
+            if(c.mH) p.push({ n: c.n, d: 'H', x, y, w: c.mH.w, c: c.mH.c });
+            if(c.mV) p.push({ n: c.n, d: 'V', x, y, w: c.mV.w, c: c.mV.c });
         }));
-
-        let righeParole = p.map(item => {
-            let defPulita = item.c.replace(/'/g, "\\'");
-            return `            { n: ${item.n}, d: '${item.d}', x: ${item.x}, y: ${item.y}, w: '${item.w}', c: '${defPulita}' }`;
-        }).join(',\n');
-
-        const contenutoFile = `const SCHEMI_BIBLICI = [
-    {
-        id: 1,
-        parole: [
-\n${righeParole}
-        ]
-    }
-];`;
-
-        const blob = new Blob([contenutoFile], { type: 'text/javascript' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'schemi.js';
-        a.click();
+        let righe = p.map(i => ` {n:${i.n},d:'${i.d}',x:${i.x},y:${i.y},w:'${i.w}',c:'${i.c.replace(/'/g,"\\'")}'}`).join(',\n');
+        const blob = new Blob([`const SCHEMI_BIBLICI = [{id:1,parole:[\n${righe}\n]}];`], { type: 'text/javascript' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'schema.js'; a.click();
     }
 
-    function resetAll() { 
-        if(confirm("Cancellare tutto lo schema?")) { 
-            saveState();
-            data.forEach(r => r.forEach(c => { c.l=''; c.b=false; c.n=0; c.mH=null; c.mV=null; })); 
-            render(); 
-        } 
-    }
-    
+    function resetAll() { if(confirm("Resettare?")) { saveState(); data.forEach(r => r.forEach(c => { c.l=''; c.b=false; c.mH=null; c.mV=null; })); render(); } }
+
     function importJS(input) {
-    const file = input.files[0];
-    if (!file) return;
+        const file = input.files[0];
+        if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const content = e.target.result;
-            
-            // Regex più flessibile per trovare l'array delle parole
-            const match = content.match(/parole:\s*\[([\s\S]*?)\]\s*\}\s*\]/);
-            if (!match) {
-                alert("Il file non sembra essere uno schema valido per questo generatore.");
-                return;
-            }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const content = e.target.result;
+                const match = content.match(/parole:\s*\[([\s\S]*?)\]/);
+                if (!match) {
+                    alert("File non valido");
+                    return;
+                }
+                const raw = match[1].split('},').filter(s => s.trim() !== '');
+                const parole = raw.map(r => {
+                    const g = (k) => { 
+                        const m = r.match(new RegExp(`${k}:\\s*['"]?([^'"]+)['"]?`)); 
+                        return m ? m[1] : null; 
+                    };
+                    return { n:parseInt(g('n')), d:g('d'), x:parseInt(g('x')), y:parseInt(g('y')), w:g('w'), c:g('c') };
+                }).filter(p => p.w);
 
-            // Pulizia e parsing delle singole voci
-            const entries = match[1].split('},').filter(s => s.trim() !== '');
-            const nuoveParole = entries.map(entry => {
-                const getVal = (key) => {
-                    // Cerca il valore tra virgolette o dopo i due punti
-                    const regex = new RegExp(`${key}:\\s*['"]?([^'"]+)['"]?`);
-                    const m = entry.match(regex);
-                    return m ? m[1] : null;
-                };
-
-                const n = getVal('n');
-                const d = getVal('d');
-                const x = getVal('x');
-                const y = getVal('y');
-                const w = getVal('w');
-                const c = getVal('c');
-
-                if (!w) return null;
-
-                return {
-                    n: parseInt(n),
-                    d: d,
-                    x: parseInt(x),
-                    y: parseInt(y),
-                    w: w,
-                    c: c ? c.replace(/\\'/g, "'") : ""
-                };
-            }).filter(p => p !== null);
-
-            // SALVATAGGIO STATO PER UNDO
-            saveState();
-
-            // RESET GRIGLIA
-            data.forEach(r => r.forEach(cell => { 
-                cell.l=''; cell.b=false; cell.n=0; cell.mH=null; cell.mV=null; 
-            }));
-
-            // INSERIMENTO DATI
-            nuoveParole.forEach(p => {
-                // Posiziona metadati
-                if (p.d === 'H') data[p.y][p.x].mH = p;
-                else if (p.d === 'V') data[p.y][p.x].mV = p;
+                saveState();
                 
-                // Forza numero
-                data[p.y][p.x].n = p.n;
-
-                // Scrive lettere
-                for (let i = 0; i < p.w.length; i++) {
-                    let cx = p.d === 'H' ? p.x + i : p.x;
-                    let cy = p.d === 'H' ? p.y : p.y + i;
-                    if (cx < S && cy < S) {
-                        data[cy][cx].l = p.w[i].toUpperCase();
-                        data[cy][cx].b = false;
+                // Pulisce
+                data.forEach(r => r.forEach(c => { c.l=''; c.b=false; c.mH=null; c.mV=null; }));
+                
+                // Ricostruisce
+                parole.forEach(p => {
+                    data[p.y][p.x][p.d==='H'?'mH':'mV'] = p;
+                    for (let i=0; i<p.w.length; i++) {
+                        let cx = p.d==='H'?p.x+i:p.x, cy = p.d==='H'?p.y:p.y+i;
+                        if (cx<S && cy<S) { data[cy][cx].l=p.w[i].toUpperCase(); data[cy][cx].b=false; }
                     }
-                }
-            });
-
-            // LOGICA RIEMPIMENTO CASELLE NERE AUTOMATICHE
-            for (let y = 0; y < S; y++) {
-                for (let x = 0; x < S; x++) {
-                    if (data[y][x].l === '') {
-                        data[y][x].b = true;
-                    }
-                }
-            }
-
-            render();
-            alert("Schema importato con successo!");
+                });
+                
+                // Riempi nere
+                data.forEach(r => r.forEach(c => { if(c.l==='') c.b=true; }));
+                
+                render();
+                alert("Importato: " + file.name);
+            } catch (err) { alert("Errore lettura file"); }
             
-        } catch (err) {
-            console.error("Errore Import:", err);
-            alert("Errore tecnico durante l'importazione. Controlla la console.");
-        }
-        input.value = ''; // Reset input per permettere di ri-caricare lo stesso file
-    };
-    reader.readAsText(file);
-}
-
+            // RESET CRUCIALE PER CHROME: permette di selezionare lo stesso file o un altro file subito dopo
+            input.value = '';
+        };
+        reader.readAsText(file);
+    }
 </script>
 </body>
 </html>
