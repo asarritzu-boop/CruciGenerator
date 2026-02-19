@@ -79,8 +79,8 @@
             width: min(95vw, calc(100vh - 150px));
         }
         .btn { 
-            flex: 1; min-width: 30px; height: 23px; border: none; border-radius: 12px;
-            color: #fff; font-size: 8px; font-weight: 600; cursor: pointer;
+            flex: 1; min-width: 60px; height: 46px; border: none; border-radius: 12px;
+            color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
             transition: opacity 0.2s, transform 0.1s;
         }
         .btn:active { opacity: 0.7; transform: scale(0.96); }
@@ -93,7 +93,7 @@
             #main-container { flex-direction: row; gap: 20px; }
             #grid { width: calc(100vh - 60px); height: calc(100vh - 60px); }
             .footer-controls { flex-direction: column; width: 140px; height: calc(100vh - 60px); justify-content: center; }
-            .btn { flex: 0 0 23px; width: 50%; }
+            .btn { flex: 0 0 46px; width: 100%; }
         }
 
         #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; }
@@ -262,9 +262,7 @@
             let d = document.getElementById('mDef').value.trim();
             if (w.length >= 2 && w.length <= len && d !== "") insertWord(w, d, dir, len);
         };
-
         if (!window.glossarioData) return;
-
         const matches = window.glossarioData.voci.filter(v => {
             let p = v.parola.toUpperCase();
             if (p.length >= 2 && p.length <= len && !["IL","LO","LA","LE","GLI","UN","UNO","UNA"].includes(p)) {
@@ -272,14 +270,12 @@
             }
             return false;
         }).sort((a, b) => b.parola.length - a.parola.length);
-
         matches.forEach(m => {
             const btn = document.createElement('button');
-            let word = m.parola.toUpperCase();
-            let defConRif = m.rif ? `${m.def} (${m.rif})` : m.def;
+            let word = (m.parola.toUpperCase() === "LIA") ? "LEA" : m.parola.toUpperCase();
             btn.className = 's-item';
-            btn.innerHTML = `<strong>${word}</strong> <small>${defConRif}</small>`;
-            btn.onclick = () => insertWord(word, defConRif, dir, len);
+            btn.innerHTML = `<strong>${word}</strong> <small>${m.def}</small>`;
+            btn.onclick = () => insertWord(word, m.def, dir, len);
             list.appendChild(btn);
         });
     }
@@ -314,12 +310,17 @@
     function importJS(input) {
         const file = input.files[0];
         if (!file) return;
+
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const content = e.target.result;
+                // Regex flessibile per estrarre l'array delle parole
                 const match = content.match(/parole:\s*\[([\s\S]*?)\]/);
-                if (!match) { alert("File non valido."); return; }
+                if (!match) {
+                    alert("Questo file non contiene uno schema compatibile.");
+                    return;
+                }
                 const raw = match[1].split('},').filter(s => s.trim() !== '');
                 const parole = raw.map(r => {
                     const g = (k) => { 
@@ -327,34 +328,74 @@
                         return m ? m[1] : null; 
                     };
                     const word = g('w');
-                    return word ? { n:parseInt(g('n')), d:g('d'), x:parseInt(g('x')), y:parseInt(g('y')), w:word, c:g('c') } : null;
+                    if (!word) return null;
+                    return { n:parseInt(g('n')), d:g('d'), x:parseInt(g('x')), y:parseInt(g('y')), w:word, c:g('c') };
                 }).filter(p => p !== null);
+
+                if (parole.length === 0) {
+                    alert("Nessuna parola trovata nello schema.");
+                    return;
+                }
+
                 saveState();
+                
+                // Reset della griglia (index)
                 data.forEach(r => r.forEach(c => { c.l=''; c.b=false; c.mH=null; c.mV=null; }));
+                
+                // Ricostruzione
                 parole.forEach(p => {
                     data[p.y][p.x][p.d==='H'?'mH':'mV'] = p;
                     for (let i=0; i<p.w.length; i++) {
                         let cx = p.d==='H'?p.x+i:p.x, cy = p.d==='H'?p.y:p.y+i;
-                        if (cx<S && cy<S) { data[cy][cx].l=p.w[i].toUpperCase(); data[cy][cx].b=false; }
+                        if (cx<S && cy<S) { 
+                            data[cy][cx].l=p.w[i].toUpperCase(); 
+                            data[cy][cx].b=false; 
+                        }
                     }
                 });
+                
+                // Riempimento automatico delle caselle nere nelle zone vuote
                 data.forEach(r => r.forEach(c => { if(c.l==='') c.b=true; }));
+                
                 render();
-            } catch (err) { alert("Errore caricamento."); }
+                alert("Schema '" + file.name + "' caricato con successo!");
+            } catch (err) { alert("Errore durante il caricamento del file."); }
+            
+            // Fondamentale: resetta l'input per permettere carichi successivi
             input.value = '';
         };
         reader.readAsText(file);
     }
 
-    function shareApp() {
-        const shareData = { title: 'Cruciverba Generator Biblico', text: 'Crea i tuoi schemi biblici!', url: 'https://asarritzu-boop.github.io/CruciGenerator/' };
-        if (navigator.share) { navigator.share(shareData).catch(() => fallbackCopy(shareData.url)); } 
-        else { fallbackCopy(shareData.url); }
+            function shareApp() {
+        const shareData = {
+            title: 'Cruciverba Generator Biblico',
+            text: 'Prova questa app per creare cruciverba biblici!',
+            url: 'https://asarritzu-boop.github.io/CruciGenerator/'
+        };
+
+        // Prova la condivisione nativa (funziona solo su HTTPS)
+        if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+            navigator.share(shareData).catch((err) => {
+                // Se l'utente non ha annullato volontariamente, prova il fallback
+                if (err.name !== 'AbortError') fallbackCopy(shareData.url);
+            });
+        } else {
+            // Se il browser non supporta la condivisione (es. Chrome su HTTP o locale)
+            fallbackCopy(shareData.url);
+        }
     }
 
+    // Funzione aggiuntiva per copiare il link se la condivisione fallisce
     function fallbackCopy(text) {
-        navigator.clipboard.writeText(text).then(() => alert("Link copiato!")).catch(() => alert("Copia: " + text));
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Link dell'app copiato negli appunti!");
+        }).catch(() => {
+            alert("Copia questo link: " + text);
+        });
     }
+    
+    
 </script>
 </body>
 </html>
