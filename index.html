@@ -367,37 +367,34 @@
         reader.readAsText(file);
     }
 
-        function shareApp() {
+            function shareApp() {
         const shareData = {
             title: 'Cruciverba Generator Biblico',
-            text: 'Crea i tuoi schemi biblici personalizzati!',
+            text: 'Prova questa app per creare cruciverba biblici!',
             url: 'https://asarritzu-boop.github.io/CruciGenerator/'
         };
-        
-        // Verifica se la Web Share API è supportata e se il contesto è sicuro
+
+        // Prova la condivisione nativa (funziona solo su HTTPS)
         if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-            navigator.share(shareData)
-                .then(() => console.log('Condivisione riuscita'))
-                .catch((err) => {
-                    // Se l'utente annulla la condivisione non facciamo nulla, 
-                    // se c'è un errore proviamo il fallback
-                    if(err.name !== 'AbortError') fallbackCopy(shareData.url);
-                });
+            navigator.share(shareData).catch((err) => {
+                // Se l'utente non ha annullato volontariamente, prova il fallback
+                if (err.name !== 'AbortError') fallbackCopy(shareData.url);
+            });
         } else {
-            // Se non disponibile (es. Chrome su HTTP o locale), usa il fallback
+            // Se il browser non supporta la condivisione (es. Chrome su HTTP o locale)
             fallbackCopy(shareData.url);
         }
     }
 
+    // Funzione aggiuntiva per copiare il link se la condivisione fallisce
     function fallbackCopy(text) {
-        // Usa la clipboard API per copiare il link negli appunti
         navigator.clipboard.writeText(text).then(() => {
             alert("Link dell'app copiato negli appunti!");
         }).catch(() => {
-            // In caso di ulteriore errore (browser molto vecchi)
-            alert("Impossibile condividere automaticamente. Copia questo link: " + text);
+            alert("Copia questo link: " + text);
         });
     }
+    
     
 </script>
 </body>
