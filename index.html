@@ -248,6 +248,7 @@
     function clearCellData(x, y) { data[y][x].l = ''; data[y][x].mH = null; data[y][x].mV = null; }
 
     function findWords(dir) {
+        function findWords(dir) {
         let pat = "", len = 0;
         for (let i = 0; (dir === 'H' ? cur.x + i : cur.y + i) < S; i++) {
             let cell = dir === 'H' ? data[cur.y][cur.x + i] : data[cur.y + i][cur.x];
@@ -262,25 +263,32 @@
             let d = document.getElementById('mDef').value.trim();
             if (w.length >= 2 && w.length <= len && d !== "") insertWord(w, d, dir, len);
         };
+
         if (!window.glossarioData) return;
+
         const matches = window.glossarioData.voci.filter(v => {
             let p = v.parola.toUpperCase();
+            // Regola: Esclude gli articoli dalle risposte
             if (p.length >= 2 && p.length <= len && !["IL","LO","LA","LE","GLI","UN","UNO","UNA"].includes(p)) {
                 return new RegExp(`^${pat.substring(0, p.length)}$`, "i").test(p);
             }
             return false;
         }).sort((a, b) => b.parola.length - a.parola.length);
+
         matches.forEach(m => {
             const btn = document.createElement('button');
-            let word = (m.parola.toUpperCase() === "LIA") ? "LEA" : m.parola.toUpperCase();
+            let word = m.parola.toUpperCase();
+            
+            // Include il riferimento biblico (es: "rif: 'Genesi 1:1'") nella definizione finale
+            let defConRif = m.rif ? `${m.def} (${m.rif})` : m.def;
+
             btn.className = 's-item';
-            btn.innerHTML = `<strong>${word}</strong> <small>${m.def}</small>`;
-            btn.onclick = () => {
-    // Uniamo definizione e riferimento se presente
-    let definizioneCompleta = m.rif ? `${m.def} (${m.rif})` : m.def;
-    insertWord(word, definizioneCompleta, dir, len);
+            btn.innerHTML = `<strong>${word}</strong> <small>${defConRif}</small>`;
+            btn.onclick = () => insertWord(word, defConRif, dir, len);
+            list.appendChild(btn);
         });
-    }
+        }
+        
 
     function insertWord(word, definition, dir, maxLen) {
         saveState();
