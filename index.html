@@ -275,8 +275,11 @@
             let word = (m.parola.toUpperCase() === "LIA") ? "LEA" : m.parola.toUpperCase();
             btn.className = 's-item';
             btn.innerHTML = `<strong>${word}</strong> <small>${m.def}</small>`;
-            btn.onclick = () => insertWord(word, m.def, dir, len);
-            list.appendChild(btn);
+            btn.onclick = () => {
+    // Uniamo definizione e riferimento se presente
+    let definizioneCompleta = m.rif ? `${m.def} (${m.rif})` : m.def;
+    insertWord(word, definizioneCompleta, dir, len);
+};
         });
     }
 
