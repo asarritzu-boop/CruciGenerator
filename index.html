@@ -270,14 +270,24 @@
             }
             return false;
         }).sort((a, b) => b.parola.length - a.parola.length);
-        matches.forEach(m => {
+                matches.forEach(m => {
             const btn = document.createElement('button');
             let word = (m.parola.toUpperCase() === "LIA") ? "LEA" : m.parola.toUpperCase();
             btn.className = 's-item';
-            btn.innerHTML = `<strong>${word}</strong> <small>${m.def}</small>`;
-            btn.onclick = () => insertWord(word, m.def, dir, len);
+            
+            // 1. Creiamo una stringa che unisce definizione e riferimento.
+            // NOTA: Sostituisci "m.rif" con il nome esatto del campo che usi nel tuo glossario.js (es. m.riferimento, m.ref, ecc.)
+            let definizioneCompleta = m.rif ? `${m.def} (${m.rif})` : m.def;
+
+            // 2. Mostriamo la definizione completa a schermo
+            btn.innerHTML = `<strong>${word}</strong> <small>${definizioneCompleta}</small>`;
+            
+            // 3. Passiamo la definizione completa a insertWord in modo che finisca nell'esportazione
+            btn.onclick = () => insertWord(word, definizioneCompleta, dir, len);
+            
             list.appendChild(btn);
         });
+
     }
 
     function insertWord(word, definition, dir, maxLen) {
