@@ -75,11 +75,11 @@
         }
 
         .footer-controls { 
-            display: flex; gap: 8px; padding: 10px 0;
+            display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0;
             width: min(95vw, calc(100vh - 150px));
         }
         .btn { 
-            flex: 1; height: 46px; border: none; border-radius: 12px;
+            flex: 1; min-width: 60px; height: 46px; border: none; border-radius: 12px;
             color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
             transition: opacity 0.2s, transform 0.1s;
         }
@@ -87,6 +87,7 @@
         .btn-reset { background: var(--ios-red); }
         .btn-export { background: var(--ios-blue); }
         .btn-share { background: var(--ios-green); }
+        .btn-undo { background: #444; }
 
         @media (orientation: landscape) {
             #main-container { flex-direction: row; gap: 20px; }
@@ -109,7 +110,6 @@
         .btn-dir { background: var(--ios-blue); color: white; }
         .btn-clear { background: var(--ios-light-gray); color: var(--ios-red); grid-column: span 2; }
 
-        /* Nuovo stile per input manuale */
         #manual-input { 
             background: #F2F2F7; padding: 12px; border-radius: 12px; margin-bottom: 15px;
             display: none; flex-direction: column; gap: 8px;
@@ -135,10 +135,15 @@
 
 <div id="main-container">
     <div id="grid"></div>
+    
     <div class="footer-controls">
+        <button class="btn btn-undo" onclick="undo()" title="Annulla">↩</button>
+        <button class="btn btn-undo" onclick="redo()" title="Ripristina">↪</button>
         <button class="btn btn-reset" onclick="resetAll()">Nuovo</button>
         <button class="btn btn-export" onclick="exportJS()">Esporta</button>
+        <button class="btn" style="background: var(--ios-gray);" onclick="document.getElementById('importFile').click()">Importa</button>
         <button class="btn btn-share" onclick="shareApp()">Condividi</button>
+        <input type="file" id="importFile" accept=".js" style="display:none" onchange="importJS(this)">
     </div>
 </div>
 
@@ -159,6 +164,29 @@
     const S = 11;
     let data = Array(S).fill().map(() => Array(S).fill(null).map(() => ({ l: '', b: false, n: 0, mH: null, mV: null })));
     let cur = { x: 0, y: 0 };
+    
+    // Logica Undo/Redo
+    let undoStack = [];
+    let redoStack = [];
+
+    function saveState() {
+        undoStack.push(JSON.stringify(data));
+        redoStack = [];
+    }
+
+    function undo() {
+        if (undoStack.length === 0) return;
+        redoStack.push(JSON.stringify(data));
+        data = JSON.parse(undoStack.pop());
+        render();
+    }
+
+    function redo() {
+        if (redoStack.length === 0) return;
+        undoStack.push(JSON.stringify(data));
+        data = JSON.parse(redoStack.pop());
+        render();
+    }
 
     window.addEventListener('load', () => {
         render();
@@ -221,12 +249,14 @@
     }
 
     function toggleBlack() {
+        saveState();
         data[cur.y][cur.x].b = !data[cur.y][cur.x].b;
         if (data[cur.y][cur.x].b) clearCellData(cur.x, cur.y);
         render(); closeM();
     }
 
     function clearCell() {
+        saveState();
         clearCellData(cur.x, cur.y);
         data[cur.y][cur.x].b = false;
         render(); closeM();
@@ -296,6 +326,7 @@
     }
 
     function insertWord(word, definition, dir, maxLen) {
+        saveState();
         if (word.length < maxLen) {
             let nx = dir === 'H' ? cur.x + word.length : cur.x;
             let ny = dir === 'H' ? cur.y : cur.y + word.length;
@@ -363,7 +394,108 @@
         a.click();
     }
 
-    function resetAll() { if(confirm("Cancellare tutto lo schema?")) { data.forEach(r => r.forEach(c => { c.l=''; c.b=false; c.n=0; c.mH=null; c.mV=null; })); render(); } }
+    function resetAll() { 
+        if(confirm("Cancellare tutto lo schema?")) { 
+            saveState();
+            data.forEach(r => r.forEach(c => { c.l=''; c.b=false; c.n=0; c.mH=null; c.mV=null; })); 
+            render(); 
+        } 
+    }
+    
+    function importJS(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const content = e.target.result;
+            
+            // Regex più flessibile per trovare l'array delle parole
+            const match = content.match(/parole:\s*\[([\s\S]*?)\]\s*\}\s*\]/);
+            if (!match) {
+                alert("Il file non sembra essere uno schema valido per questo generatore.");
+                return;
+            }
+
+            // Pulizia e parsing delle singole voci
+            const entries = match[1].split('},').filter(s => s.trim() !== '');
+            const nuoveParole = entries.map(entry => {
+                const getVal = (key) => {
+                    // Cerca il valore tra virgolette o dopo i due punti
+                    const regex = new RegExp(`${key}:\\s*['"]?([^'"]+)['"]?`);
+                    const m = entry.match(regex);
+                    return m ? m[1] : null;
+                };
+
+                const n = getVal('n');
+                const d = getVal('d');
+                const x = getVal('x');
+                const y = getVal('y');
+                const w = getVal('w');
+                const c = getVal('c');
+
+                if (!w) return null;
+
+                return {
+                    n: parseInt(n),
+                    d: d,
+                    x: parseInt(x),
+                    y: parseInt(y),
+                    w: w,
+                    c: c ? c.replace(/\\'/g, "'") : ""
+                };
+            }).filter(p => p !== null);
+
+            // SALVATAGGIO STATO PER UNDO
+            saveState();
+
+            // RESET GRIGLIA
+            data.forEach(r => r.forEach(cell => { 
+                cell.l=''; cell.b=false; cell.n=0; cell.mH=null; cell.mV=null; 
+            }));
+
+            // INSERIMENTO DATI
+            nuoveParole.forEach(p => {
+                // Posiziona metadati
+                if (p.d === 'H') data[p.y][p.x].mH = p;
+                else if (p.d === 'V') data[p.y][p.x].mV = p;
+                
+                // Forza numero
+                data[p.y][p.x].n = p.n;
+
+                // Scrive lettere
+                for (let i = 0; i < p.w.length; i++) {
+                    let cx = p.d === 'H' ? p.x + i : p.x;
+                    let cy = p.d === 'H' ? p.y : p.y + i;
+                    if (cx < S && cy < S) {
+                        data[cy][cx].l = p.w[i].toUpperCase();
+                        data[cy][cx].b = false;
+                    }
+                }
+            });
+
+            // LOGICA RIEMPIMENTO CASELLE NERE AUTOMATICHE
+            for (let y = 0; y < S; y++) {
+                for (let x = 0; x < S; x++) {
+                    if (data[y][x].l === '') {
+                        data[y][x].b = true;
+                    }
+                }
+            }
+
+            render();
+            alert("Schema importato con successo!");
+            
+        } catch (err) {
+            console.error("Errore Import:", err);
+            alert("Errore tecnico durante l'importazione. Controlla la console.");
+        }
+        input.value = ''; // Reset input per permettere di ri-caricare lo stesso file
+    };
+    reader.readAsText(file);
+}
+
 </script>
 </body>
 </html>
