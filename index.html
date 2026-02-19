@@ -11,12 +11,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icona-512.png">
 
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://asarritzu-boop.github.io/CruciGenerator/">
-    <meta property="og:title" content="Cruciverba Generator Biblico">
-    <meta property="og:description" content="Crea i tuoi schemi biblici personalizzati. Funziona anche offline.">
-    <meta property="og:image" content="https://asarritzu-boop.github.io/CruciGenerator/icona-512.png">
-
     <script src="glossario.js"></script>
     
     <style>
@@ -25,8 +19,8 @@
             --ios-red: #FF3B30;
             --ios-green: #34C759;
             --ios-gray: #8E8E93;
-            --ios-light-gray: #E5E5EA;
             --ios-bg: #000000;
+            --header-h: 40px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -40,16 +34,16 @@
         }
 
         header {
-            height: 35px; background: #1C1C1E;
+            height: var(--header-h); background: #1C1C1E;
             display: flex; align-items: center; justify-content: center;
             border-bottom: 0.5px solid #333; flex-shrink: 0;
         }
-        header h1 { font-size: 11px; font-weight: 600; color: var(--ios-gray); text-transform: uppercase; letter-spacing: 0.8px; }
+        header h1 { font-size: 12px; font-weight: 600; color: var(--ios-gray); text-transform: uppercase; letter-spacing: 1px; }
 
         #main-container {
             flex: 1; display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            padding: 10px; gap: 5px;
+            padding: 10px; gap: 10px;
         }
 
         #grid { 
@@ -58,119 +52,99 @@
             grid-template-rows: repeat(11, 1fr); 
             gap: 1px; background: #3A3A3C; 
             border: 2px solid #3A3A3C;
-            border-radius: 8px; overflow: hidden;
-            width: min(95vw, calc(100vh - 150px)); 
-            height: min(95vw, calc(100vh - 150px));
+            border-radius: 8px;
+            width: min(85vw, calc(100vh - 160px));
+            aspect-ratio: 1 / 1;
+            flex-shrink: 0;
         }
 
         .cell { 
             background: #FFF; display: flex; align-items: center; justify-content: center; 
-            font-weight: 700; font-size: min(5vw, 3.5vh); cursor: pointer; 
+            font-weight: 700; font-size: 18px; cursor: pointer; 
             position: relative; text-transform: uppercase; color: #000;
         }
         .cell.black { background: #1C1C1E; }
         .cell .num { 
             position: absolute; top: 1px; left: 2px; 
-            font-size: min(1.8vw, 1.1vh); color: var(--ios-gray); font-weight: 600; 
+            font-size: 9px; color: var(--ios-gray); font-weight: 600; 
         }
 
         .footer-controls { 
-            display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0;
-            width: min(95vw, calc(100vh - 150px));
+            display: flex; flex-direction: row; gap: 6px; 
+            width: min(90vw, 450px); flex-shrink: 0;
         }
         .btn { 
-            flex: 1; min-width: 30px; height: 46px; border: none; border-radius: 8px;
-            color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
-            transition: opacity 0.2s, transform 0.1s;
+            flex: 1; height: 40px; border: none; border-radius: 10px;
+            color: #fff; font-size: 10px; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
         }
-        .btn:active { opacity: 0.7; transform: scale(0.96); }
         .btn-reset { background: var(--ios-red); }
         .btn-export { background: var(--ios-blue); }
-        .btn-share { background: var(--ios-green); }
         .btn-undo { background: #444; }
 
-     @media (orientation: landscape) {
-    /* 1. Forza il body a non scrollare e a occupare solo lo spazio visibile */
-    body {
-        height: 100dvh;
-        overflow: hidden;
-    }
-
-    header { height: 30px; } /* Riduciamo leggermente l'header */
-
-    #main-container { 
-        flex-direction: row; 
-        gap: 10px; 
-        padding: 5px;
-        padding-left: max(10px, env(safe-area-inset-left));
-        padding-right: max(10px, env(safe-area-inset-right));
-        height: calc(100dvh - 30px); /* Togliamo l'altezza dell'header */
-        align-items: center;
-        justify-content: center;
-    }
-
-    #grid { 
-        /* Usiamo il 75% per lasciare spazio ai bordi e alle barre del browser */
-        width: min(75vw, 75dvh); 
-        height: min(75vw, 75dvh); 
-        margin: 0;
-    }
-
-       .footer-controls { 
-        flex-direction: column; 
-        width: 130px; 
-        /* Altezza massima dinamica per evitare che esca dallo schermo */
-        height: min(75vw, 75dvh); 
-        justify-content: flex-start; 
-        /* Fondamentale: permette di scorrere i pulsanti se l'ultimo sparisce */
-        overflow-y: auto; 
-        gap: 6px;
-        padding-right: 8px; /* Spazio per l'eventuale barra di scorrimento */
-        -webkit-overflow-scrolling: touch; /* Rende lo scroll fluido su iOS */
-    }
-
-    .btn { 
-        flex: 0 0 28px; /* Altezza fissa minima per ogni pulsante */
-        width: 100%; 
-        font-size: 11px; 
-        padding: 0 5px;
-        line-height: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-    }
-
-
-        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; }
+        /* MODALE TOTALMENTE SCROLLABILE */
+        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; }
+        
         #modal { 
-            display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
-            background: #FFF; padding: 20px; border-radius: 20px; z-index: 101; 
-            width: 92%; max-width: 440px; color: #000;
-            box-shadow: 0 15px 50px rgba(0,0,0,0.9);
+            display: none; 
+            position: fixed; 
+            top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            background: #FFF; 
+            border-radius: 20px; 
+            z-index: 101; 
+            width: 95%; 
+            max-width: 500px; 
+            max-height: 90vh; /* Non supera mai lo schermo */
+            color: #000; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        .modal-grid-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .mode-btn { padding: 14px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 13px; }
+        /* Questo contenitore permette lo scroll di TUTTO il contenuto */
+        #modal-scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .modal-grid-btns { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr 1fr; 
+            gap: 8px; margin-bottom: 10px; 
+        }
+        .mode-btn { padding: 12px 2px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 10px; text-transform: uppercase; }
         .btn-black-toggle { background: #3A3A3C; color: white; }
         .btn-dir { background: var(--ios-blue); color: white; }
-        .btn-clear { background: var(--ios-light-gray); color: var(--ios-red); grid-column: span 2; }
 
         #manual-input { 
-            background: #F2F2F7; padding: 12px; border-radius: 12px; margin-bottom: 15px;
-            display: none; flex-direction: column; gap: 8px;
+            background: #F2F2F7; padding: 10px; border-radius: 12px; margin-bottom: 15px;
+            display: none; flex-direction: column; gap: 6px;
         }
-        #manual-input input { 
-            padding: 10px; border: 1px solid #CCC; border-radius: 8px; font-size: 14px; 
-        }
+        #manual-input input { padding: 10px; border: 1px solid #CCC; border-radius: 8px; font-size: 14px; width: 100%; }
         #mAddBtn { background: var(--ios-green); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 700; }
 
+        #sList { 
+            border-top: 1px solid #EEE;
+            padding-top: 10px;
+        }
+
         .s-item { 
-            padding: 15px; border-bottom: 0.5px solid var(--ios-light-gray); width: 100%; 
+            padding: 12px 0; border-bottom: 1px solid #F2F2F2; width: 100%; 
             text-align: left; background: none; border: none; cursor: pointer; 
         }
-        .s-item strong { color: var(--ios-blue); font-size: 17px; }
-        .s-item small { color: #333; font-size: 12px; display: block; margin-top: 3px; }
+        .s-item strong { color: var(--ios-blue); font-size: 16px; display: block; }
+        .s-item small { color: #555; font-size: 12px; line-height: 1.2; }
+
+        @media (orientation: landscape) {
+            #main-container { flex-direction: row; padding: 5px 20px; gap: 20px; }
+            #grid { height: calc(100vh - 60px); width: auto; }
+            .footer-controls { flex-direction: column; width: 80px; height: calc(100vh - 60px); justify-content: space-between; }
+            .btn { width: 100%; font-size: 9px; }
+            #modal { width: 80%; height: 95vh; }
+        }
     </style>
 </head>
 <body>
@@ -179,57 +153,63 @@
 
 <div id="main-container">
     <div id="grid"></div>
-    
     <div class="footer-controls">
-        <button class="btn btn-undo" onclick="undo()" title="Annulla">↩</button>
-        <button class="btn btn-undo" onclick="redo()" title="Ripristina">↪</button>
+        <button class="btn btn-undo" onclick="undo()">↩</button>
+        <button class="btn btn-undo" onclick="redo()">↪</button>
         <button class="btn btn-reset" onclick="resetAll()">Nuovo</button>
         <button class="btn btn-export" onclick="exportJS()">Esporta</button>
         <button class="btn" style="background: var(--ios-gray);" onclick="document.getElementById('importFile').click()">Importa</button>
-        <button class="btn btn-share" onclick="shareApp()">Condividi</button>
+        <button class="btn" style="background: var(--ios-green);" onclick="shareApp()">Condividi</button>
         <input type="file" id="importFile" accept="*/*" style="display:none" onchange="importJS(this)">
     </div>
 </div>
 
 <div id="overlay" onclick="closeM()"></div>
 <div id="modal">
-    <div id="modal-actions" class="modal-grid-btns"></div>
-    <div id="manual-input">
-        <input type="text" id="mWord" placeholder="PAROLA" style="text-transform: uppercase;">
-        <input type="text" id="mDef" placeholder="DEFINIZIONE">
-        <button id="mAddBtn">INSERISCI MANUALE</button>
+    <div id="modal-scroll-area">
+        <div id="modal-actions" class="modal-grid-btns"></div>
+        
+        <button class="mode-btn" style="width: 100%; background:#F2F2F7; color:#D00; margin-bottom: 10px;" onclick="clearCell()">SVUOTA CELLA</button>
+        
+        <div id="manual-input">
+            <input type="text" id="mWord" placeholder="PAROLA (es: LEA)" style="text-transform: uppercase;">
+            <input type="text" id="mDef" placeholder="DEFINIZIONE">
+            <button id="mAddBtn">INSERISCI MANUALMENTE</button>
+        </div>
+
+        <div id="sList"></div>
     </div>
-    <div id="sList" style="max-height: 40vh; overflow-y: auto;"></div>
 </div>
 
 <script>
+    // Logica JS (Costanti e Variabili)
     const S = 11;
     let data = Array(S).fill().map(() => Array(S).fill(null).map(() => ({ l: '', b: false, n: 0, mH: null, mV: null })));
     let cur = { x: 0, y: 0 };
     let undoStack = [], redoStack = [];
 
-    function saveState() {
-        undoStack.push(JSON.stringify(data));
-        redoStack = [];
-    }
-
-    function undo() {
-        if (undoStack.length === 0) return;
-        redoStack.push(JSON.stringify(data));
-        data = JSON.parse(undoStack.pop());
-        render();
-    }
-
-    function redo() {
-        if (redoStack.length === 0) return;
-        undoStack.push(JSON.stringify(data));
-        data = JSON.parse(redoStack.pop());
-        render();
-    }
-
     window.addEventListener('load', () => {
+        const saved = localStorage.getItem('crossword_index_data');
+        if (saved) data = JSON.parse(saved);
         render();
     });
+
+    function saveToLocal() { localStorage.setItem('crossword_index_data', JSON.stringify(data)); }
+    function saveState() { undoStack.push(JSON.stringify(data)); redoStack = []; saveToLocal(); }
+
+    function undo() { 
+        if (undoStack.length === 0) return; 
+        redoStack.push(JSON.stringify(data)); 
+        data = JSON.parse(undoStack.pop()); 
+        render(); saveToLocal();
+    }
+
+    function redo() { 
+        if (redoStack.length === 0) return; 
+        undoStack.push(JSON.stringify(data)); 
+        data = JSON.parse(redoStack.pop()); 
+        render(); saveToLocal();
+    }
 
     function updateNumbers() {
         data.forEach(r => r.forEach(c => c.n = 0));
@@ -237,9 +217,9 @@
         for (let y = 0; y < S; y++) {
             for (let x = 0; x < S; x++) {
                 if (data[y][x].b) continue;
-                let h = (x === 0 || data[y][x-1].b) && (x + 1 < S && !data[y][x+1].b);
-                let v = (y === 0 || data[y-1][x].b) && (y + 1 < S && !data[y+1][x].b);
-                if (h || v) data[y][x].n = count++;
+                let isH = (x === 0 || data[y][x-1].b) && (x + 1 < S && !data[y][x+1].b);
+                let isV = (y === 0 || data[y-1][x].b) && (y + 1 < S && !data[y+1][x].b);
+                if (isH || isV) data[y][x].n = count++;
             }
         }
     }
@@ -262,17 +242,17 @@
 
     function openM() { 
         const cell = data[cur.y][cur.x];
-        const actions = document.getElementById('modal-actions');
+        document.getElementById('modal-actions').innerHTML = `
+            <button class="mode-btn btn-black-toggle" onclick="toggleBlack()">${cell.b ? 'BIANCA' : 'NERA'}</button>
+            <button class="mode-btn btn-dir" onclick="findWords('H')">ORIZZ.</button>
+            <button class="mode-btn btn-dir" onclick="findWords('V')">VERT.</button>
+        `;
         document.getElementById('sList').innerHTML = '';
         document.getElementById('manual-input').style.display = 'none';
-        actions.innerHTML = `
-            <button class="mode-btn btn-black-toggle" onclick="toggleBlack()">${cell.b ? 'BIANCA' : 'NERA'}</button>
-            <button class="mode-btn btn-dir" onclick="findWords('H')">ORIZ</button>
-            <button class="mode-btn btn-dir" onclick="findWords('V')">VERT</button>
-            <button class="mode-btn btn-clear" onclick="clearCell()">SVUOTA</button>
-        `;
         document.getElementById('overlay').style.display = 'block'; 
-        document.getElementById('modal').style.display = 'block'; 
+        document.getElementById('modal').style.display = 'flex'; 
+        // Reset scroll position
+        document.getElementById('modal-scroll-area').scrollTop = 0;
     }
     
     function closeM() { document.getElementById('overlay').style.display = 'none'; document.getElementById('modal').style.display = 'none'; }
@@ -280,74 +260,71 @@
     function toggleBlack() {
         saveState();
         data[cur.y][cur.x].b = !data[cur.y][cur.x].b;
-        if (data[cur.y][cur.x].b) clearCellData(cur.x, cur.y);
+        data[cur.y][cur.x].l = '';
         render(); closeM();
     }
 
     function clearCell() {
         saveState();
-        clearCellData(cur.x, cur.y);
+        data[cur.y][cur.x].l = '';
         data[cur.y][cur.x].b = false;
         render(); closeM();
     }
 
-    function clearCellData(x, y) { data[y][x].l = ''; data[y][x].mH = null; data[y][x].mV = null; }
-
     function findWords(dir) {
+        if (data[cur.y][cur.x].b) { data[cur.y][cur.x].b = false; render(); }
+        let sX = cur.x, sY = cur.y;
+        while (dir === 'H' ? (sX > 0 && !data[sY][sX-1].b) : (sY > 0 && !data[sY-1][sX].b)) {
+            if (dir === 'H') sX--; else sY--;
+        }
         let pat = "", len = 0;
-        for (let i = 0; (dir === 'H' ? cur.x + i : cur.y + i) < S; i++) {
-            let cell = dir === 'H' ? data[cur.y][cur.x + i] : data[cur.y + i][cur.x];
-            if (cell.b) break;
-            pat += cell.l || ".";
+        for (let i = 0; (dir === 'H' ? sX + i : sY + i) < S; i++) {
+            let tx = dir === 'H' ? sX + i : sX;
+            let ty = dir === 'H' ? sY : sY + i;
+            if (data[ty][tx].b) break;
+            pat += data[ty][tx].l || ".";
             len++;
         }
         const list = document.getElementById('sList');
+        list.innerHTML = "";
         document.getElementById('manual-input').style.display = 'flex';
         document.getElementById('mAddBtn').onclick = () => {
             let w = document.getElementById('mWord').value.toUpperCase().trim();
             let d = document.getElementById('mDef').value.trim();
-            if (w.length >= 2 && w.length <= len && d !== "") insertWord(w, d, dir, len);
+            if (w.length >= 2 && w.length <= len) insertWord(w, d, dir, sX, sY, len);
         };
-        if (!window.glossarioData) return;
-        const matches = window.glossarioData.voci.filter(v => {
-            let p = v.parola.toUpperCase();
-            if (p.length >= 2 && p.length <= len && !["IL","LO","LA","LE","GLI","UN","UNO","UNA"].includes(p)) {
+        if (window.glossarioData && window.glossarioData.voci) {
+            const matches = window.glossarioData.voci.filter(v => {
+                let p = v.parola.toUpperCase();
+                if (p === "LIA") p = "LEA";
+                if (p.length < 2 || p.length > len || ["IL","LO","LA","LE","GLI","UN","UNO","UNA"].includes(p)) return false;
                 return new RegExp(`^${pat.substring(0, p.length)}$`, "i").test(p);
-            }
-            return false;
-        }).sort((a, b) => b.parola.length - a.parola.length);
-                matches.forEach(m => {
-            const btn = document.createElement('button');
-            let word = (m.parola.toUpperCase() === "LIA") ? "LEA" : m.parola.toUpperCase();
-            btn.className = 's-item';
-            
-            // 1. Creiamo una stringa che unisce definizione e riferimento.
-            // NOTA: Sostituisci "m.rif" con il nome esatto del campo che usi nel tuo glossario.js (es. m.riferimento, m.ref, ecc.)
-            let definizioneCompleta = m.rif ? `${m.def} (${m.rif})` : m.def;
-
-            // 2. Mostriamo la definizione completa a schermo
-            btn.innerHTML = `<strong>${word}</strong> <small>${definizioneCompleta}</small>`;
-            
-            // 3. Passiamo la definizione completa a insertWord in modo che finisca nell'esportazione
-            btn.onclick = () => insertWord(word, definizioneCompleta, dir, len);
-            
-            list.appendChild(btn);
-        });
-
+            }).sort((a,b) => b.parola.length - a.parola.length);
+            matches.forEach(m => {
+                const btn = document.createElement('button');
+                btn.className = 's-item';
+                let word = (m.parola.toUpperCase() === "LIA") ? "LEA" : m.parola.toUpperCase();
+                btn.innerHTML = `<strong>${word}</strong><small>${m.def} ${m.rif?'('+m.rif+')':''}</small>`;
+                btn.onclick = () => insertWord(word, m.def + (m.rif?' ('+m.rif+')':''), dir, sX, sY, len);
+                list.appendChild(btn);
+            });
+            if(matches.length === 0) list.innerHTML = "<p style='padding:10px; font-size:12px; color:gray;'>Nessun suggerimento.</p>";
+        }
     }
 
-    function insertWord(word, definition, dir, maxLen) {
+    function insertWord(word, def, dir, x, y, maxLen) {
         saveState();
         if (word.length < maxLen) {
-            let nx = dir === 'H' ? cur.x + word.length : cur.x, ny = dir === 'H' ? cur.y : cur.y + word.length;
-            if (nx < S && ny < S) { data[ny][nx].b = true; clearCellData(nx, ny); }
+            let nx = dir === 'H' ? x + word.length : x;
+            let ny = dir === 'H' ? y : y + word.length;
+            if (nx < S && ny < S) data[ny][nx].b = true;
         }
         for (let i = 0; i < word.length; i++) {
-            let cx = dir === 'H' ? cur.x + i : cur.x, cy = dir === 'H' ? cur.y : cur.y + i;
+            let cx = dir === 'H' ? x + i : x, cy = dir === 'H' ? y : y + i;
             data[cy][cx].l = word[i]; data[cy][cx].b = false;
         }
-        data[cur.y][cur.x][dir === 'H' ? 'mH' : 'mV'] = { d: dir, x: cur.x, y: cur.y, w: word, c: definition };
-        render(); closeM();
+        data[y][x][dir === 'H' ? 'mH' : 'mV'] = { w: word, c: def };
+        render(); closeM(); saveToLocal();
     }
 
     function exportJS() {
@@ -361,97 +338,45 @@
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'schema.js'; a.click();
     }
 
-    function resetAll() { if(confirm("Resettare?")) { saveState(); data.forEach(r => r.forEach(c => { c.l=''; c.b=false; c.mH=null; c.mV=null; })); render(); } }
+    function resetAll() { 
+        if(confirm("Vuoi cancellare tutto?")) { 
+            saveState(); 
+            data = Array(S).fill().map(() => Array(S).fill(null).map(() => ({ l: '', b: false, n: 0, mH: null, mV: null })));
+            localStorage.removeItem('crossword_index_data');
+            render(); 
+        } 
+    }
 
     function importJS(input) {
         const file = input.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
-                const content = e.target.result;
-                // Regex flessibile per estrarre l'array delle parole
-                const match = content.match(/parole:\s*\[([\s\S]*?)\]/);
-                if (!match) {
-                    alert("Questo file non contiene uno schema compatibile.");
-                    return;
-                }
-                const raw = match[1].split('},').filter(s => s.trim() !== '');
-                const parole = raw.map(r => {
-                    const g = (k) => { 
-                        const m = r.match(new RegExp(`${k}:\\s*['"]?([^'"]+)['"]?`)); 
-                        return m ? m[1] : null; 
-                    };
-                    const word = g('w');
-                    if (!word) return null;
-                    return { n:parseInt(g('n')), d:g('d'), x:parseInt(g('x')), y:parseInt(g('y')), w:word, c:g('c') };
-                }).filter(p => p !== null);
-
-                if (parole.length === 0) {
-                    alert("Nessuna parola trovata nello schema.");
-                    return;
-                }
-
+                const match = e.target.result.match(/parole:\s*\[([\s\S]*?)\]/);
+                if (!match) throw new Error();
+                const jsonStr = "[" + match[1].replace(/n:/g,'"n":').replace(/d:/g,'"d":').replace(/x:/g,'"x":').replace(/y:/g,'"y":').replace(/w:/g,'"w":').replace(/c:/g,'"c":').replace(/'/g,'"') + "]";
+                const parole = JSON.parse(jsonStr);
                 saveState();
-                
-                // Reset della griglia (index)
                 data.forEach(r => r.forEach(c => { c.l=''; c.b=false; c.mH=null; c.mV=null; }));
-                
-                // Ricostruzione
                 parole.forEach(p => {
-                    data[p.y][p.x][p.d==='H'?'mH':'mV'] = p;
                     for (let i=0; i<p.w.length; i++) {
                         let cx = p.d==='H'?p.x+i:p.x, cy = p.d==='H'?p.y:p.y+i;
-                        if (cx<S && cy<S) { 
-                            data[cy][cx].l=p.w[i].toUpperCase(); 
-                            data[cy][cx].b=false; 
-                        }
+                        if (cx<S && cy<S) { data[cy][cx].l=p.w[i].toUpperCase(); data[cy][cx].b=false; }
                     }
+                    data[p.y][p.x][p.d==='H'?'mH':'mV'] = {w: p.w, c: p.c};
                 });
-                
-                // Riempimento automatico delle caselle nere nelle zone vuote
-                data.forEach(r => r.forEach(c => { if(c.l==='') c.b=true; }));
-                
-                render();
-                alert("Schema '" + file.name + "' caricato con successo!");
-            } catch (err) { alert("Errore durante il caricamento del file."); }
-            
-            // Fondamentale: resetta l'input per permettere carichi successivi
-            input.value = '';
+                render(); saveToLocal();
+            } catch (err) { alert("Errore."); }
         };
         reader.readAsText(file);
     }
 
-            function shareApp() {
-        const shareData = {
-            title: 'Cruciverba Generator Biblico',
-            text: 'Prova questa app per creare cruciverba biblici!',
-            url: 'https://asarritzu-boop.github.io/CruciGenerator/'
-        };
-
-        // Prova la condivisione nativa (funziona solo su HTTPS)
-        if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-            navigator.share(shareData).catch((err) => {
-                // Se l'utente non ha annullato volontariamente, prova il fallback
-                if (err.name !== 'AbortError') fallbackCopy(shareData.url);
-            });
-        } else {
-            // Se il browser non supporta la condivisione (es. Chrome su HTTP o locale)
-            fallbackCopy(shareData.url);
-        }
+    function shareApp() {
+        const url = 'https://asarritzu-boop.github.io/CruciGenerator/';
+        if (navigator.share) navigator.share({ title: 'Cruciverba Generator', url });
+        else { navigator.clipboard.writeText(url); alert("Copiato!"); }
     }
-
-    // Funzione aggiuntiva per copiare il link se la condivisione fallisce
-    function fallbackCopy(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            alert("Link dell'app copiato negli appunti!");
-        }).catch(() => {
-            alert("Copia questo link: " + text);
-        });
-    }
-    
-    
 </script>
 </body>
 </html>
