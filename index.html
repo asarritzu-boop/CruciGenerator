@@ -53,7 +53,7 @@
             gap: 1px; background: #3A3A3C; 
             border: 2px solid #3A3A3C;
             border-radius: 8px;
-            width: min(85vw, calc(100vh - 160px));
+            width: min(95vw, calc(95vh - 160px));
             aspect-ratio: 1 / 1;
             flex-shrink: 0;
         }
@@ -84,67 +84,85 @@
 
         /* MODALE TOTALMENTE SCROLLABILE */
         #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; }
-        
         #modal { 
-            display: none; 
-            position: fixed; 
-            top: 50%; left: 50%; 
-            transform: translate(-50%, -50%); 
-            background: #FFF; 
-            border-radius: 20px; 
-            z-index: 101; 
-            width: 95%; 
-            max-width: 500px; 
-            max-height: 90vh; /* Non supera mai lo schermo */
-            color: #000; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            flex-direction: column;
-            overflow: hidden;
+            display: none; position: fixed; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); background: #FFF; border-radius: 20px; 
+            z-index: 101; width: 95%; max-width: 500px; max-height: 90vh; 
+            color: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            flex-direction: column; overflow: hidden;
         }
 
-        /* Questo contenitore permette lo scroll di TUTTO il contenuto */
-        #modal-scroll-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-            -webkit-overflow-scrolling: touch;
-        }
+        #modal-scroll-area { flex: 1; overflow-y: auto; padding: 15px; -webkit-overflow-scrolling: touch; }
 
-        .modal-grid-btns { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr 1fr; 
-            gap: 8px; margin-bottom: 10px; 
-        }
+        .modal-grid-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
         .mode-btn { padding: 12px 2px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 10px; text-transform: uppercase; }
         .btn-black-toggle { background: #3A3A3C; color: white; }
         .btn-dir { background: var(--ios-blue); color: white; }
 
-        #manual-input { 
-            background: #F2F2F7; padding: 10px; border-radius: 12px; margin-bottom: 15px;
-            display: none; flex-direction: column; gap: 6px;
-        }
+        #manual-input { background: #F2F2F7; padding: 10px; border-radius: 12px; margin-bottom: 15px; display: none; flex-direction: column; gap: 6px; }
         #manual-input input { padding: 10px; border: 1px solid #CCC; border-radius: 8px; font-size: 14px; width: 100%; }
         #mAddBtn { background: var(--ios-green); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 700; }
 
-        #sList { 
-            border-top: 1px solid #EEE;
-            padding-top: 10px;
-        }
-
-        .s-item { 
-            padding: 12px 0; border-bottom: 1px solid #F2F2F2; width: 100%; 
-            text-align: left; background: none; border: none; cursor: pointer; 
-        }
+        #sList { border-top: 1px solid #EEE; padding-top: 10px; }
+        .s-item { padding: 12px 0; border-bottom: 1px solid #F2F2F2; width: 100%; text-align: left; background: none; border: none; cursor: pointer; }
         .s-item strong { color: var(--ios-blue); font-size: 16px; display: block; }
         .s-item small { color: #555; font-size: 12px; line-height: 1.2; }
 
         @media (orientation: landscape) {
-            #main-container { flex-direction: row; padding: 5px 20px; gap: 20px; }
-            #grid { height: calc(100vh - 60px); width: auto; }
-            .footer-controls { flex-direction: column; width: 80px; height: calc(100vh - 60px); justify-content: space-between; }
-            .btn { width: 100%; font-size: 9px; }
-            #modal { width: 80%; height: 95vh; }
-        }
+    /* 1. Elimina l'header e ogni margine inutile */
+    header { display: none !important; }
+    body { padding: 0 !important; margin: 0 !important; height: 100svh !important; }
+
+    #main-container { 
+        flex-direction: row !important; 
+        padding: 2px 10px !important; 
+        gap: 15px !important; 
+        height: 100svh !important; /* Usa la Small Viewport Height */
+        align-items: center;
+        justify-content: center;
+    }
+
+    #grid { 
+        /* Riduciamo drasticamente l'altezza per far apparire la riga 21 */
+        height: 95svh !important; 
+        width: 95svh !important; 
+        max-width: 95vw !important;
+        flex-shrink: 0;
+        margin: 0 !important;
+    }
+
+    .footer-controls { 
+        display: flex !important;
+        flex-direction: column !important; 
+        width: 90px !important; 
+        /* I pulsanti devono essere alti quanto la griglia */
+        height: 80svh !important; 
+        justify-content: space-between !important; 
+        gap: 2px !important;
+        flex-shrink: 0;
+    }
+
+    .btn { 
+        /* 'flex: 1' li rende "gonfi" se c'è spazio, quindi usiamo un'altezza fissa minima */
+        flex: 1 !important;
+        width: 100% !important;
+        font-size: 8px !important;
+        padding: 0 !important;
+        min-height: 15px !important; /* Impedisce che spariscano */
+        max-height: 35px !important; /* Impedisce che si "gonfino" troppo */
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px !important;
+    }
+}
+
+
+
+
+
+
     </style>
 </head>
 <body>
@@ -168,21 +186,17 @@
 <div id="modal">
     <div id="modal-scroll-area">
         <div id="modal-actions" class="modal-grid-btns"></div>
-        
         <button class="mode-btn" style="width: 100%; background:#F2F2F7; color:#D00; margin-bottom: 10px;" onclick="clearCell()">SVUOTA CELLA</button>
-        
         <div id="manual-input">
-            <input type="text" id="mWord" placeholder="PAROLA (es: LEA)" style="text-transform: uppercase;">
+            <input type="text" id="mWord" placeholder="PAROLA" style="text-transform: uppercase;">
             <input type="text" id="mDef" placeholder="DEFINIZIONE">
             <button id="mAddBtn">INSERISCI MANUALMENTE</button>
         </div>
-
         <div id="sList"></div>
     </div>
 </div>
 
 <script>
-    // Logica JS (Costanti e Variabili)
     const S = 11;
     let data = Array(S).fill().map(() => Array(S).fill(null).map(() => ({ l: '', b: false, n: 0, mH: null, mV: null })));
     let cur = { x: 0, y: 0 };
@@ -196,33 +210,6 @@
 
     function saveToLocal() { localStorage.setItem('crossword_index_data', JSON.stringify(data)); }
     function saveState() { undoStack.push(JSON.stringify(data)); redoStack = []; saveToLocal(); }
-
-    function undo() { 
-        if (undoStack.length === 0) return; 
-        redoStack.push(JSON.stringify(data)); 
-        data = JSON.parse(undoStack.pop()); 
-        render(); saveToLocal();
-    }
-
-    function redo() { 
-        if (redoStack.length === 0) return; 
-        undoStack.push(JSON.stringify(data)); 
-        data = JSON.parse(redoStack.pop()); 
-        render(); saveToLocal();
-    }
-
-    function updateNumbers() {
-        data.forEach(r => r.forEach(c => c.n = 0));
-        let count = 1;
-        for (let y = 0; y < S; y++) {
-            for (let x = 0; x < S; x++) {
-                if (data[y][x].b) continue;
-                let isH = (x === 0 || data[y][x-1].b) && (x + 1 < S && !data[y][x+1].b);
-                let isV = (y === 0 || data[y-1][x].b) && (y + 1 < S && !data[y+1][x].b);
-                if (isH || isV) data[y][x].n = count++;
-            }
-        }
-    }
 
     function render() {
         updateNumbers();
@@ -240,6 +227,72 @@
         }));
     }
 
+    function updateNumbers() {
+        data.forEach(r => r.forEach(c => c.n = 0));
+        let count = 1;
+        for (let y = 0; y < S; y++) {
+            for (let x = 0; x < S; x++) {
+                if (data[y][x].b) continue;
+                let isH = (x === 0 || data[y][x-1].b) && (x + 1 < S && !data[y][x+1].b);
+                let isV = (y === 0 || data[y-1][x].b) && (y + 1 < S && !data[y+1][x].b);
+                if (isH || isV) data[y][x].n = count++;
+            }
+        }
+    }
+
+    function importJS(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const match = e.target.result.match(/parole:\s*\[([\s\S]*?)\]/);
+            if (!match) throw new Error("Formato non valido");
+            
+            const jsonStr = "[" + match[1]
+                .replace(/n:/g,'"n":').replace(/d:/g,'"d":')
+                .replace(/x:/g,'"x":').replace(/y:/g,'"y":')
+                .replace(/w:/g,'"w":').replace(/c:/g,'"c":')
+                .replace(/'/g,'"') + "]";
+            
+            const parole = JSON.parse(jsonStr);
+            saveState();
+
+            // 1. Imposta TUTTA la griglia come NERA inizialmente
+            data = Array(S).fill().map(() => Array(S).fill(null).map(() => ({ 
+                l: '', b: true, n: 0, mH: null, mV: null 
+            })));
+
+            // 2. Per ogni parola importata, "accendi" le caselle rendendole bianche
+            parole.forEach(p => {
+                const word = p.w.toUpperCase();
+                for (let i = 0; i < word.length; i++) {
+                    let cx = p.d === 'H' ? p.x + i : p.x;
+                    let cy = p.d === 'H' ? p.y : p.y + i;
+                    
+                    if (cx < S && cy < S) {
+                        data[cy][cx].l = word[i];
+                        data[cy][cx].b = false; // Diventa bianca perché c'è una lettera
+                    }
+                }
+                // Salva i metadati della definizione nella prima cella della parola
+                if (p.x < S && p.y < S) {
+                    data[p.y][p.x][p.d === 'H' ? 'mH' : 'mV'] = { w: word, c: p.c };
+                }
+            });
+
+            render();
+            saveToLocal();
+            alert("Importazione completata: griglia ricalcolata.");
+        } catch (err) { 
+            console.error(err);
+            alert("Errore nel file importato."); 
+        }
+    };
+    reader.readAsText(file);
+    input.value = ""; 
+}
+
     function openM() { 
         const cell = data[cur.y][cur.x];
         document.getElementById('modal-actions').innerHTML = `
@@ -251,25 +304,12 @@
         document.getElementById('manual-input').style.display = 'none';
         document.getElementById('overlay').style.display = 'block'; 
         document.getElementById('modal').style.display = 'flex'; 
-        // Reset scroll position
         document.getElementById('modal-scroll-area').scrollTop = 0;
     }
     
     function closeM() { document.getElementById('overlay').style.display = 'none'; document.getElementById('modal').style.display = 'none'; }
-
-    function toggleBlack() {
-        saveState();
-        data[cur.y][cur.x].b = !data[cur.y][cur.x].b;
-        data[cur.y][cur.x].l = '';
-        render(); closeM();
-    }
-
-    function clearCell() {
-        saveState();
-        data[cur.y][cur.x].l = '';
-        data[cur.y][cur.x].b = false;
-        render(); closeM();
-    }
+    function toggleBlack() { saveState(); data[cur.y][cur.x].b = !data[cur.y][cur.x].b; data[cur.y][cur.x].l = ''; render(); closeM(); }
+    function clearCell() { saveState(); data[cur.y][cur.x].l = ''; data[cur.y][cur.x].b = false; render(); closeM(); }
 
     function findWords(dir) {
         if (data[cur.y][cur.x].b) { data[cur.y][cur.x].b = false; render(); }
@@ -308,7 +348,6 @@
                 btn.onclick = () => insertWord(word, m.def + (m.rif?' ('+m.rif+')':''), dir, sX, sY, len);
                 list.appendChild(btn);
             });
-            if(matches.length === 0) list.innerHTML = "<p style='padding:10px; font-size:12px; color:gray;'>Nessun suggerimento.</p>";
         }
     }
 
@@ -338,45 +377,10 @@
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'schema.js'; a.click();
     }
 
-    function resetAll() { 
-        if(confirm("Vuoi cancellare tutto?")) { 
-            saveState(); 
-            data = Array(S).fill().map(() => Array(S).fill(null).map(() => ({ l: '', b: false, n: 0, mH: null, mV: null })));
-            localStorage.removeItem('crossword_index_data');
-            render(); 
-        } 
-    }
-
-    function importJS(input) {
-        const file = input.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const match = e.target.result.match(/parole:\s*\[([\s\S]*?)\]/);
-                if (!match) throw new Error();
-                const jsonStr = "[" + match[1].replace(/n:/g,'"n":').replace(/d:/g,'"d":').replace(/x:/g,'"x":').replace(/y:/g,'"y":').replace(/w:/g,'"w":').replace(/c:/g,'"c":').replace(/'/g,'"') + "]";
-                const parole = JSON.parse(jsonStr);
-                saveState();
-                data.forEach(r => r.forEach(c => { c.l=''; c.b=false; c.mH=null; c.mV=null; }));
-                parole.forEach(p => {
-                    for (let i=0; i<p.w.length; i++) {
-                        let cx = p.d==='H'?p.x+i:p.x, cy = p.d==='H'?p.y:p.y+i;
-                        if (cx<S && cy<S) { data[cy][cx].l=p.w[i].toUpperCase(); data[cy][cx].b=false; }
-                    }
-                    data[p.y][p.x][p.d==='H'?'mH':'mV'] = {w: p.w, c: p.c};
-                });
-                render(); saveToLocal();
-            } catch (err) { alert("Errore."); }
-        };
-        reader.readAsText(file);
-    }
-
-    function shareApp() {
-        const url = 'https://asarritzu-boop.github.io/CruciGenerator/';
-        if (navigator.share) navigator.share({ title: 'Cruciverba Generator', url });
-        else { navigator.clipboard.writeText(url); alert("Copiato!"); }
-    }
+    function undo() { if (undoStack.length === 0) return; redoStack.push(JSON.stringify(data)); data = JSON.parse(undoStack.pop()); render(); saveToLocal(); }
+    function redo() { if (redoStack.length === 0) return; undoStack.push(JSON.stringify(data)); data = JSON.parse(redoStack.pop()); render(); saveToLocal(); }
+    function resetAll() { if(confirm("Cancellare tutto?")) { saveState(); data = Array(S).fill().map(() => Array(S).fill(null).map(() => ({ l: '', b: false, n: 0, mH: null, mV: null }))); localStorage.removeItem('crossword_index_data'); render(); } }
+    function shareApp() { const url = 'https://asarritzu-boop.github.io/CruciGenerator/'; if (navigator.share) navigator.share({ title: 'Cruciverba Generator', url }); else { navigator.clipboard.writeText(url); alert("Copiato!"); } }
 </script>
 </body>
 </html>
