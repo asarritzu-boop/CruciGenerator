@@ -312,45 +312,86 @@
     function clearCell() { saveState(); data[cur.y][cur.x].l = ''; data[cur.y][cur.x].b = false; render(); closeM(); }
 
     function findWords(dir) {
-        if (data[cur.y][cur.x].b) { data[cur.y][cur.x].b = false; render(); }
-        let sX = cur.x, sY = cur.y;
-        while (dir === 'H' ? (sX > 0 && !data[sY][sX-1].b) : (sY > 0 && !data[sY-1][sX].b)) {
-            if (dir === 'H') sX--; else sY--;
-        }
-        let pat = "", len = 0;
-        for (let i = 0; (dir === 'H' ? sX + i : sY + i) < S; i++) {
-            let tx = dir === 'H' ? sX + i : sX;
-            let ty = dir === 'H' ? sY : sY + i;
-            if (data[ty][tx].b) break;
-            pat += data[ty][tx].l || ".";
-            len++;
-        }
-        const list = document.getElementById('sList');
-        list.innerHTML = "";
-        document.getElementById('manual-input').style.display = 'flex';
-        document.getElementById('mAddBtn').onclick = () => {
-            let w = document.getElementById('mWord').value.toUpperCase().trim();
-            let d = document.getElementById('mDef').value.trim();
-            if (w.length >= 2 && w.length <= len) insertWord(w, d, dir, sX, sY, len);
-        };
-        if (window.glossarioData && window.glossarioData.voci) {
-            const matches = window.glossarioData.voci.filter(v => {
-                let p = v.parola.toUpperCase();
-                if (p === "LIA") p = "LEA";
-                if (p.length < 2 || p.length > len || ["IL","LO","LA","LE","GLI","UN","UNO","UNA"].includes(p)) return false;
-                return new RegExp(`^${pat.substring(0, p.length)}$`, "i").test(p);
-            }).sort((a,b) => b.parola.length - a.parola.length);
-            matches.forEach(m => {
-                const btn = document.createElement('button');
-                btn.className = 's-item';
-                let word = (m.parola.toUpperCase() === "LIA") ? "LEA" : m.parola.toUpperCase();
-                btn.innerHTML = `<strong>${word}</strong><small>${m.def} ${m.rif?'('+m.rif+')':''}</small>`;
-                btn.onclick = () => insertWord(word, m.def + (m.rif?' ('+m.rif+')':''), dir, sX, sY, len);
-                list.appendChild(btn);
-            });
-        }
+    // 1. Controllo immediato sulla presenza dei dati
+    if (typeof window.glossarioData === 'undefined' || !window.glossarioData.voci) {
+        alert("Dati non trovati. Verifica che glossario.js contenga 'window.glossarioData = { voci: [...] };'");
+        return;
     }
 
+    if (data[cur.y][cur.x].b) { data[cur.y][cur.x].b = false; render(); }
+    let sX = cur.x, sY = cur.y;
+    while (dir === 'H' ? (sX > 0 && !data[sY][sX-1].b) : (sY > 0 && !data[sY-1][sX].b)) {
+        if (dir === 'H') sX--; else sY--;
+    }
+    
+    let pat = "", len = 0;
+    for (let i = 0; (dir === 'H' ? sX + i : sY + i) < S; i++) {
+        let tx = dir === 'H' ? sX + i : sX;
+        let ty = dir === 'H' ? sY : sY + i;
+        if (data[ty][tx].b) break;
+        pat += data[ty][tx].l || ".";
+        len++;
+    }
+    
+    const list = document.getElementById('sList');
+    const mWordInput = document.getElementById('mWord');
+    const mDefInput = document.getElementById('mDef');
+    
+    // Reset campi
+    mWordInput.value = "";
+    mDefInput.value = "";
+    list.innerHTML = "";
+    document.getElementById('manual-input').style.display = 'flex';
+    
+    document.getElementById('mAddBtn').onclick = () => {
+        let w = mWordInput.value.toUpperCase().trim();
+        let d = mDefInput.value.trim();
+        if (w.length >= 2 && w.length <= len) insertWord(w, d, dir, sX, sY, len);
+    };
+
+    // Filtro e logica autocompletamento
+    const renderList = (filterText = "") => {
+        list.innerHTML = "";
+        let exactMatch = null;
+
+        const filteredMatches = window.glossarioData.voci.filter(v => {
+            let p = v.parola.toUpperCase();
+            if (p === "LIA") p = "LEA"; // Correzione LIA -> LEA [cite: 2026-02-15]
+            
+            // Esclusione articoli [cite: 2026-02-14]
+            const articoli = ["IL","LO","LA","LE","GLI","UN","UNO","UNA"];
+            if (p.length < 2 || p.length > len || articoli.includes(p)) return false;
+            
+            // Match col pattern della griglia
+            const patternMatch = new RegExp(`^${pat.substring(0, p.length)}$`, "i").test(p);
+            // Match col filtro manuale che stai scrivendo
+            const startMatch = p.startsWith(filterText);
+
+            if (p === filterText) exactMatch = v; 
+            return patternMatch && startMatch;
+        }).sort((a,b) => b.parola.length - a.parola.length);
+
+        // Autocompilazione immediata se trovi la parola esatta
+        if (exactMatch) {
+            let pName = exactMatch.parola.toUpperCase() === "LIA" ? "LEA" : exactMatch.parola.toUpperCase();
+            mDefInput.value = exactMatch.def + (exactMatch.rif ? ` (${exactMatch.rif})` : '');
+        }
+
+        filteredMatches.forEach(m => {
+            const btn = document.createElement('button');
+            btn.className = 's-item';
+            let word = (m.parola.toUpperCase() === "LIA") ? "LEA" : m.parola.toUpperCase();
+            let fullDef = m.def + (m.rif ? ` (${m.rif})` : '');
+            btn.innerHTML = `<strong>${word}</strong><small>${fullDef}</small>`;
+            btn.onclick = () => insertWord(word, fullDef, dir, sX, sY, len);
+            list.appendChild(btn);
+        });
+    };
+
+    renderList("");
+    mWordInput.oninput = (e) => renderList(e.target.value.toUpperCase().trim());
+    }
+    
     function insertWord(word, def, dir, x, y, maxLen) {
         saveState();
         if (word.length < maxLen) {
