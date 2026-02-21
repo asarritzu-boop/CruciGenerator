@@ -645,7 +645,7 @@ window.glossarioData = {
 { "id": 641, "parola": "DANIELE", "def": "Profeta gettato nella fossa dei leoni", "rif": "Daniele 6:16" },
 { "id": 642, "parola": "ESTER", "def": "Regina che salvo il suo popolo", "rif": "Ester 7:3" },
 { "id": 643, "parola": "MARIA", "def": "Madre terrena di Gesu", "rif": "Matteo 1:18" },
-{ "id": 644, "parola": "PIETRO", "def": "Apostolo chiamato anche Cefa", "rif": "Giovanni 1:42" }.
+{ "id": 644, "parola": "PIETRO", "def": "Apostolo chiamato anche Cefa", "rif": "Giovanni 1:42" },
    { "id": 645, "parola": "MANNA", "def": "Pane dal cielo provveduto miracolosamente nel deserto.", "rif": "Esodo 16:31" },
 { "id": 646, "parola": "EREDE", "def": "Colui che riceve un'eredita per diritto legale o promessa.", "rif": "Galati 4:7" },
 { "id": 647, "parola": "RUBEN", "def": "Il figlio primogenito di Giacobbe e Lia.", "rif": "Genesi 29:32" },
